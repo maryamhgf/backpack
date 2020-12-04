@@ -13,7 +13,7 @@ ignore =
 	W291, # trailing whitespace
 	W503, # line break before binary operator
 	W504, # line break after binary operator
-exclude = docs, docs_src, build, .git
+exclude = docs, docs_src/rtd, docs_src/rtd_output, docs_src/splash, build, .git
 
 
 # Differences with pytorch
