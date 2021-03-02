@@ -18,6 +18,8 @@ class MSELossDerivatives(BaseLossDerivatives):
 
 
     """
+    def __init__(self, normalized = False):
+        self.normalized = normalized
 
     def get_module(self):
         return MSELoss
@@ -39,12 +41,19 @@ class MSELossDerivatives(BaseLossDerivatives):
         self.check_input_dims(module)
 
         N, D = module.input0.shape
-        sqrt_H = sqrt(2) * eye(D, device=module.input0.device)  # [D, D]
-        sqrt_H = sqrt_H.unsqueeze(0).repeat(N, 1, 1)  # [N, D, D]
-        sqrt_H = einsum("nab->anb", sqrt_H)  # [D, N, D]
+        if self.normalized:
+            sqrt_H = eye(D, device=module.input0.device)  # [D, D]
+            sqrt_H = sqrt_H.unsqueeze(0).repeat(N, 1, 1)  # [N, D, D]
+            sqrt_H = einsum("nab->anb", sqrt_H)  # [D, N, D]
+        else:
+            sqrt_H = sqrt(2) * eye(D, device=module.input0.device)  # [D, D]
+            sqrt_H = sqrt_H.unsqueeze(0).repeat(N, 1, 1)  # [N, D, D]
+            sqrt_H = einsum("nab->anb", sqrt_H)  # [D, N, D]
+            if module.reduction == "mean":
+                sqrt_H /= sqrt(module.input0.numel())
+        
 
-        if module.reduction == "mean":
-            sqrt_H /= sqrt(module.input0.numel())
+        
 
         return sqrt_H
 

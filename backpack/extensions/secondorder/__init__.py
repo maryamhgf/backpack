@@ -19,10 +19,12 @@ The implemented extensions are
 """
 
 from .diag_ggn import DiagGGN, DiagGGNExact, DiagGGNMC
+from .trial import TRIAL
 from .diag_hessian import DiagHessian
 from .hbp import HBP, KFAC, KFLR, KFRA
 
 __all__ = [
+    "TRIAL",
     "DiagGGNExact",
     "DiagGGNMC",
     "DiagGGN",

@@ -2,8 +2,61 @@ import torch
 from torch import einsum
 from torch.nn import Unfold
 from torch.nn.functional import conv1d, conv2d, conv3d
+from backpack.utils.fft_conv import fft_conv
 
 from backpack.utils.ein import eingroup
+import opt_einsum as oe
+import time
+import torch.nn.functional as F
+
+# 0: matmul
+# 1: fft
+# 2: conv2d
+def extract_weight_ngd(module, backproped, MODE):
+    # test: naive method plus [Gold so far]
+    if MODE == 0:
+        input = unfold_func(module)(module.input0)
+        grad_output_viewed = separate_channels_and_pixels(module, backproped)
+        AX = einsum("nkl,vnml->vnkm", (input, grad_output_viewed))
+        v = AX.shape[0]
+        n = AX.shape[1]
+        AX = AX.reshape(n * v, -1)
+        # return einsum("vnkm,zqkm->vnzq", (AX, AX))
+        return torch.matmul(AX, AX.permute(1,0))
+    elif MODE == 1:
+        A = module.input0
+        n = A.shape[0]
+        p = 2
+        M = backproped
+        v = M.shape[0]
+        kernel_ = M.reshape(M.shape[1] * M.shape[0], M.shape[2], M.shape[3], M.shape[4])
+        out = fft_conv(A, kernel_, padding = (p,p))
+        K = out.reshape(v * n,-1)
+        K_fft = torch.matmul(K, K.permute(1,0)) 
+        return K_fft
+    elif MODE == 2:
+        A = module.input0
+        n = A.shape[0]
+        p = 1
+        M = backproped
+        v = M.shape[0]
+        M = M.permute(1, 0, 2, 3, 4)
+        M = M.reshape(M.shape[2] * M.shape[1] * M.shape[0], M.shape[3], M.shape[4]).unsqueeze(1)
+        A = A.permute(1 ,0, 2, 3)
+        output = conv2d(A, M, groups = n, padding = (p,p))
+        output = output.permute(1, 0, 2, 3)
+        output = output.reshape(n, v, -1)
+        output = output.permute(1, 0 , 2)
+        K = output.reshape(n * v, -1)
+        K_torch = torch.matmul(K, K.permute(1,0))
+        return K_torch
+    else:
+        raise NotImplementedError(
+                    "Extension SUSPENDED")
+        return 0
+    
+def extract_bias_ngd(module, backproped):
+    return einsum("vnchw,klchw->vnkl", backproped, backproped)
 
 
 def unfold_func(module):

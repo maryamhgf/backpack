@@ -5,6 +5,7 @@ BackPACK Extensions
 from .curvmatprod import GGNMP, HMP, PCHMP
 from .firstorder import BatchGrad, BatchL2Grad, SumGradSquared, Variance
 from .secondorder import (
+    TRIAL,
     HBP,
     KFAC,
     KFLR,
@@ -16,6 +17,7 @@ from .secondorder import (
 )
 
 __all__ = [
+    "TRIAL",
     "PCHMP",
     "GGNMP",
     "HMP",
