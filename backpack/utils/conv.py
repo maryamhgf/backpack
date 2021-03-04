@@ -23,6 +23,11 @@ def extract_weight_ngd(module, backproped, MODE):
         AX = AX.reshape(n * v, -1)
         # return einsum("vnkm,zqkm->vnzq", (AX, AX))
         return torch.matmul(AX, AX.permute(1,0))
+        # return torch.zeros(100,100)
+    if MODE == -1: # test
+        v = backproped.shape[0]
+        n = backproped.shape[1]
+        return torch.zeros(v*n,v*n)
     elif MODE == 1:
         A = module.input0
         n = A.shape[0]
