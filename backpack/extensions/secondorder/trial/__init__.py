@@ -17,7 +17,7 @@ from backpack.extensions.backprop_extension import BackpropExtension
 # from backpack.extensions.secondorder.hbp import LossHessianStrategy
 
 # from . import activations, conv2d, dropout, flatten, linear, losses, padding, pooling
-from . import activations, linear, losses, conv2d, flatten
+from . import activations, linear, losses, conv2d, flatten, pooling, dropout
 
 
 class TRIAL(BackpropExtension):
@@ -34,11 +34,11 @@ class TRIAL(BackpropExtension):
                 # MSELoss: losses.DiagGGNMSELoss(),
                 CrossEntropyLoss: losses.TRIALCrossEntropyLoss(),
                 Linear: linear.TRIALLinear(),
-                # MaxPool2d: pooling.DiagGGNMaxPool2d(),
-                # AvgPool2d: pooling.DiagGGNAvgPool2d(),
+                MaxPool2d: pooling.TRIALMaxPool2d(),
+                AvgPool2d: pooling.TRIALAvgPool2d(),
                 # ZeroPad2d: padding.DiagGGNZeroPad2d(),
                 Conv2d: conv2d.TRIALConv2d(self.MODE),
-                # Dropout: dropout.DiagGGNDropout(),
+                Dropout: dropout.TRIALDropout(),
                 Flatten: flatten.TRIALFlatten(),
                 ReLU: activations.TRIALReLU(),
                 Sigmoid: activations.TRIALSigmoid(),
