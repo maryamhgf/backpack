@@ -26,7 +26,7 @@ def extract_weight_ngd(module, backproped, MODE):
     elif MODE == -1: # test
         v = backproped.shape[0]
         n = backproped.shape[1]
-        return torch.zeros(v*n,v*n).to(backproped.device)
+        return torch.zeros(v*n,v*n).to(module.input0.device)
     elif MODE == 1:
         A = module.input0
         n = A.shape[0]
