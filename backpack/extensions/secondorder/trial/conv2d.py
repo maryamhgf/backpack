@@ -12,7 +12,7 @@ class TRIALConv2d(TRIALBaseModule):
     # TODO: FIX these functions for NGD
     def bias(self, ext, module, grad_inp, grad_out, backproped):
         sqrt_ggn = backproped
-        return convUtils.extract_bias_ngd(module, sqrt_ggn)
+        return convUtils.extract_bias_ngd(module, sqrt_ggn, self.MODE)
 
     def weight(self, ext, module, grad_inp, grad_out, backproped):
         # mask_shape = module.input0.shape

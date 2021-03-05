@@ -23,7 +23,12 @@ def extract_weight_ngd(module, backproped, MODE):
         AX = AX.reshape(n * v, -1)
         # return einsum("vnkm,zqkm->vnzq", (AX, AX))
         return torch.matmul(AX, AX.permute(1,0))
-    elif MODE == -1: # test
+    elif MODE == 7: # test     
+        input = unfold_func(module)(module.input0)
+        grad_output_viewed = separate_channels_and_pixels(module, backproped)
+        AX = einsum("nkl,vnml->vnkm", (input, grad_output_viewed))
+        return einsum("vnkm,zqkm->vnzq", (AX, AX))
+    elif MODE == -1: # test silent mode
         v = backproped.shape[0]
         n = backproped.shape[1]
         return torch.zeros(v*n,v*n).to(module.input0.device)
@@ -59,8 +64,15 @@ def extract_weight_ngd(module, backproped, MODE):
                     "Extension SUSPENDED")
         return 0
     
-def extract_bias_ngd(module, backproped):
-    return einsum("vnchw,klchw->vnkl", backproped, backproped)
+def extract_bias_ngd(module, backproped, MODE):
+    if MODE == -1: # testing silent mode
+        v = backproped.shape[0]
+        n = backproped.shape[1]
+        return torch.zeros(v*n,v*n).to(module.input0.device)
+    elif MODE == 7: # testing the order
+        return einsum("vnchw,klchw->vnkl", backproped, backproped)
+    else:
+        return einsum("vnchw,klchw->vnkl", backproped, backproped)
 
 
 def unfold_func(module):

@@ -33,7 +33,7 @@ class TRIAL(BackpropExtension):
             module_exts={
                 # MSELoss: losses.DiagGGNMSELoss(),
                 CrossEntropyLoss: losses.TRIALCrossEntropyLoss(),
-                Linear: linear.TRIALLinear(),
+                Linear: linear.TRIALLinear(self.MODE),
                 MaxPool2d: pooling.TRIALMaxPool2d(),
                 AvgPool2d: pooling.TRIALAvgPool2d(),
                 # ZeroPad2d: padding.DiagGGNZeroPad2d(),
