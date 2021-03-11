@@ -2,7 +2,7 @@ from warnings import warn
 
 from torch import einsum
 from torch.nn import BatchNorm1d
-
+import torch
 from backpack.core.derivatives.basederivatives import BaseParameterDerivatives
 
 
@@ -46,6 +46,39 @@ class BatchNorm1dDerivatives(BaseParameterDerivatives):
         jac_t_mat -= dx_hat.sum(1).unsqueeze(1).expand_as(jac_t_mat)
         jac_t_mat -= einsum("ni,vsi,si->vni", (x_hat, dx_hat, x_hat))
         jac_t_mat = einsum("vni,i->vni", (jac_t_mat, ivar / N))
+
+        return jac_t_mat
+
+    def _my_jac_t_mat_prod(self, module, g_inp, g_out, mat):
+        
+        assert module.affine is True
+        # print('INSIDE BN')
+        # print('INPUTS:\n')
+        # print('module:\n', module, '\n')
+        # print('g_inp:\n', g_inp, '\n')
+        # print('g_out:\n', g_out, '\n')
+        # print('mat:\n', mat, '\n')
+        # print('mat dim:\n', mat.shape, '\n')
+        # print('module.input0:\n', module.input0, '\n')
+
+        N = module.input0.size(0)
+        x_hat, var = self.get_normalized_input_and_var(module)
+        ivar = 1.0 / (var + module.eps).sqrt()
+
+    
+        
+        dx_hat = einsum("vni,i->vni", (mat, module.weight))
+        # print(')'*10, dx_hat.shape)
+        XXhat = einsum("ni,si->nsi", (x_hat, x_hat))
+        XXhat_dxhat = einsum("nsi,vsi->vnsi", (XXhat, dx_hat))
+        # XXhat_dxhat = XXhat_dxhat.permute(1, 2, 0, 3)
+        dx_hat_diag = torch.diag_embed(dx_hat.permute(0,2,1)).permute(0, 2, 3, 1)
+        temp = dx_hat.unsqueeze(1).expand_as(dx_hat_diag)
+        jac_t_mat = -XXhat_dxhat / N + dx_hat_diag - temp / N
+        # dx_hat_diag = einsum("vni->vnni", (dx_hat))
+        # print('MMMM:', jac_t_mat.shape)
+        
+        jac_t_mat = einsum("vnsi,i->vnsi", (jac_t_mat, ivar ))
 
         return jac_t_mat
 

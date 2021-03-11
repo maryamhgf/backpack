@@ -11,13 +11,14 @@ from torch.nn import (
     Sigmoid,
     Tanh,
     ZeroPad2d,
+    BatchNorm1d
 )
 
 from backpack.extensions.backprop_extension import BackpropExtension
 # from backpack.extensions.secondorder.hbp import LossHessianStrategy
 
 # from . import activations, conv2d, dropout, flatten, linear, losses, padding, pooling
-from . import activations, linear, losses, conv2d, flatten, pooling, dropout
+from . import activations, linear, losses, conv2d, flatten, pooling, dropout, batchnorm1d
 
 
 class TRIAL(BackpropExtension):
@@ -42,6 +43,7 @@ class TRIAL(BackpropExtension):
                 Flatten: flatten.TRIALFlatten(),
                 ReLU: activations.TRIALReLU(),
                 Sigmoid: activations.TRIALSigmoid(),
+                BatchNorm1d: batchnorm1d.TRIALBatchNorm1d()
                 # Tanh: activations.DiagGGNTanh(),
             },
         )

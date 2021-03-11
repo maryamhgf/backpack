@@ -9,6 +9,10 @@ import opt_einsum as oe
 import time
 import torch.nn.functional as F
 
+# TODO: add computations based on backpack weight_t_jac... and compare it to MODE == 0
+# _weight_jac_t_mat_prod: that's the function
+
+
 # 0: matmul
 # 1: fft
 # 2: conv2d
@@ -23,11 +27,16 @@ def extract_weight_ngd(module, backproped, MODE):
         AX = AX.reshape(n * v, -1)
         # return einsum("vnkm,zqkm->vnzq", (AX, AX))
         return torch.matmul(AX, AX.permute(1,0))
-    elif MODE == 7: # test     
+    elif MODE == 7 or MODE == 17: # test ordering    
         input = unfold_func(module)(module.input0)
         grad_output_viewed = separate_channels_and_pixels(module, backproped)
         AX = einsum("nkl,vnml->vnkm", (input, grad_output_viewed))
         return einsum("vnkm,zqkm->vnzq", (AX, AX))
+    elif MODE == 13: # test blocked NGD
+        input = unfold_func(module)(module.input0)
+        grad_output_viewed = separate_channels_and_pixels(module, backproped)
+        AX = einsum("nkl,vnml->vnkm", (input, grad_output_viewed))
+        return einsum("vnkm,vqkm->vnq", (AX, AX))
     elif MODE == -1: # test silent mode
         v = backproped.shape[0]
         n = backproped.shape[1]
@@ -69,8 +78,10 @@ def extract_bias_ngd(module, backproped, MODE):
         v = backproped.shape[0]
         n = backproped.shape[1]
         return torch.zeros(v*n,v*n).to(module.input0.device)
-    elif MODE == 7: # testing the order
+    elif MODE == 7 or MODE == 17: # testing the order
         return einsum("vnchw,klchw->vnkl", backproped, backproped)
+    elif MODE == 13: # testing the blocked NGD
+        return einsum("vnchw,vlchw->vnl", backproped, backproped)
     else:
         return einsum("vnchw,klchw->vnkl", backproped, backproped)
 

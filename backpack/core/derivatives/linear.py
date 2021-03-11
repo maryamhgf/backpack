@@ -24,7 +24,8 @@ class LinearDerivatives(BaseParameterDerivatives):
     def _jac_t_mat_prod(self, module, g_inp, g_out, mat):
         """Apply transposed Jacobian of the output w.r.t. the input."""
         d_input = module.weight.data
-        return einsum("oi,vno->vni", (d_input, mat))
+        d_output = einsum("oi,vno->vni", (d_input, mat))
+        return d_output
 
     def _jac_mat_prod(self, module, g_inp, g_out, mat):
         """Apply Jacobian of the output w.r.t. the input."""

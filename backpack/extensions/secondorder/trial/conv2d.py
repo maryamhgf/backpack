@@ -4,6 +4,8 @@ from backpack.utils import conv as convUtils
 from torch import sqrt, zeros
 import torch
 
+from torch import einsum
+
 class TRIALConv2d(TRIALBaseModule):
     def __init__(self, MODE):
         self.MODE = MODE
@@ -19,7 +21,13 @@ class TRIALConv2d(TRIALBaseModule):
         # mask = self.create_mask_conv2d(module, mask_shape)
         # X = convUtils.unfold_func(module)(module.input0)
         # weight_diag = convUtils.extract_weight_ngd(module, X, backproped, mask)
-        weight_diag = convUtils.extract_weight_ngd(module, backproped, self.MODE)
-        return weight_diag
+        if self.MODE == 666: # not good because of repeating
+            dw = self.derivatives.weight_jac_t_mat_prod(module, grad_inp, grad_out, backproped, sum_batch=False)
+            dw = dw.reshape(dw.shape[0], dw.shape[1], dw.shape[2], -1)
+            res_ = dw.permute(0,1,3,2)
+            return einsum("vnkm,zqkm->vnzq", (res_, res_))
+        else:
+            weight_diag= convUtils.extract_weight_ngd(module, backproped, self.MODE)
+            return weight_diag
 
 
