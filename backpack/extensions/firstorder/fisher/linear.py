@@ -23,3 +23,8 @@ class FisherLinear(FisherBase):
         B =  einsum("ni,li->nl", (module.input0, module.input0))   
         A =  einsum("no,lo->nl", (g_out_sc, g_out_sc))
         return A * B
+
+    def bias(self, ext, module, g_inp, g_out, backproped):
+        n = g_out[0].shape[0]
+        g_out_sc = n * g_out[0]
+        return einsum("no,lo->nl", g_out_sc, g_out_sc)

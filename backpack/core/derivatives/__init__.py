@@ -19,6 +19,8 @@ from torch.nn import (
     Sigmoid,
     Tanh,
     ZeroPad2d,
+    BatchNorm1d,
+    BatchNorm2d
 )
 
 from .avgpool2d import AvgPool2DDerivatives
@@ -41,6 +43,8 @@ from .selu import SELUDerivatives
 from .sigmoid import SigmoidDerivatives
 from .tanh import TanhDerivatives
 from .zeropad2d import ZeroPad2dDerivatives
+from .batchnorm1d import BatchNorm1dDerivatives
+from .batchnorm2d import BatchNorm2dDerivatives
 
 derivatives_for = {
     Linear: LinearDerivatives,
@@ -63,4 +67,6 @@ derivatives_for = {
     SELU: SELUDerivatives,
     CrossEntropyLoss: CrossEntropyLossDerivatives,
     MSELoss: MSELossDerivatives,
+    BatchNorm1d: BatchNorm1dDerivatives,
+    BatchNorm2d: BatchNorm2dDerivatives,
 }

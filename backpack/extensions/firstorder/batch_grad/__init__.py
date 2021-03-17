@@ -1,5 +1,6 @@
 from torch.nn import (
     BatchNorm1d,
+    BatchNorm2d,
     Conv1d,
     Conv2d,
     Conv3d,
@@ -13,6 +14,7 @@ from backpack.extensions.backprop_extension import BackpropExtension
 
 from . import (
     batchnorm1d,
+    batchnorm2d,
     conv1d,
     conv2d,
     conv3d,
@@ -55,5 +57,6 @@ class BatchGrad(BackpropExtension):
                 ConvTranspose2d: conv_transpose2d.BatchGradConvTranspose2d(),
                 ConvTranspose3d: conv_transpose3d.BatchGradConvTranspose3d(),
                 BatchNorm1d: batchnorm1d.BatchGradBatchNorm1d(),
+                BatchNorm2d: batchnorm2d.BatchGradBatchNorm2d(),
             },
         )

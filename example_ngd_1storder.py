@@ -23,7 +23,7 @@ BATCH_SIZE = 64
 EPOCHS = 1
 PLOT = False
 num_classes = 10
-STEP_SIZE = 0.01
+STEP_SIZE = 0.1
 DAMPING = 0.1
 MAX_ITER = 60000//BATCH_SIZE
 torch.manual_seed(0)
@@ -52,43 +52,52 @@ mnist_loader = torch.utils.data.dataloader.DataLoader(
 
 
 ##### base model from backpack website:
-model = torch.nn.Sequential(
-    torch.nn.Conv2d(1, 50, 3, 1, padding = (1,1)),
-    torch.nn.ReLU(),
+# model = torch.nn.Sequential(
+#     torch.nn.Conv2d(1, 50, 3, 1, padding = (1,1)),
+#     # torch.nn.BatchNorm2d(50),
+#     torch.nn.ReLU(),
 
-    torch.nn.Conv2d(50, 50, 3, 1, padding = (1,1)),
-    torch.nn.ReLU(),
+#     torch.nn.Conv2d(50, 50, 3, 1, padding = (1,1)),
+#     # torch.nn.BatchNorm2d(50),
+#     torch.nn.ReLU(),
 
-    torch.nn.Conv2d(50, 10, 3, 1, padding = (1,1)),
-    torch.nn.ReLU(),
+#     torch.nn.Conv2d(50, 10, 3, 1, padding = (1,1)),
+#     # torch.nn.BatchNorm2d(10),
+#     torch.nn.ReLU(),
 
-    torch.nn.Flatten(), 
-    torch.nn.Linear(28*28*10, 20),
+#     torch.nn.Flatten(), 
+#     torch.nn.Linear(28*28*10, 20),
+#     # torch.nn.BatchNorm1d(20),
 
-    torch.nn.ReLU(),
+#     torch.nn.ReLU(),
 
-    torch.nn.Linear(20, 100),
+#     torch.nn.Linear(20, 100),
+#     # torch.nn.BatchNorm1d(100),
+#     torch.nn.ReLU(),
 
-    torch.nn.ReLU(),
-
-    torch.nn.Linear(100, 10),
+#     torch.nn.Linear(100, 10),
 
 
-).to(device)
+# ).to(device)
 
 
 
 ##### fully connected network. Test for linear timings.
-# model = torch.nn.Sequential(
-#     torch.nn.Flatten(),
-#     torch.nn.Linear(784, 1000),
-#     torch.nn.ReLU(),
-#     torch.nn.Linear(1000, 1000),
-#     torch.nn.ReLU(),
-#     torch.nn.Linear(1000, 500),
-#     torch.nn.ReLU(),
-#     torch.nn.Linear(500, 10),
-# ).to(device)
+model = torch.nn.Sequential(
+    torch.nn.Flatten(), 
+    torch.nn.Linear(28*28, 500),
+    torch.nn.BatchNorm1d(500),
+    torch.nn.ReLU(),
+    torch.nn.Linear(500, 500),
+    torch.nn.ReLU(),
+    torch.nn.Linear(500, 500),
+    torch.nn.ReLU(),
+    torch.nn.Linear(500, 500),
+    torch.nn.ReLU(),
+    torch.nn.Linear(500, 500),
+    torch.nn.ReLU(),
+    torch.nn.Linear(500, 10)
+).to(device)
 
 summary(model, ( 1, 28, 28))
 
@@ -139,49 +148,52 @@ def get_diff(A, B):
     return torch.norm(A - B)/torch.norm(A)
 
 
-def backpack_batch_grad():
+# def backpack_batch_grad():
+#     jac_list = 0
+#     with backpack(BatchGrad()):
+#         loss = loss_function(output, y)
+#         loss.backward(retain_graph=True)
+#     for name, param in model.named_parameters():
+#         # multiple by batch size to get the original gradient
+#         all_grad = BATCH_SIZE * param.grad_batch.reshape(BATCH_SIZE, -1)
+#         jac_list += torch.matmul(all_grad, all_grad.t())
+#         param.grad_batch = None
+#         param.grad = None
+#     JJT = jac_list / BATCH_SIZE
+
+#     return JJT
+
+def optimal_JJT(acc_test=False):
     jac_list = 0
-    with backpack(BatchGrad()):
-        loss = loss_function(output, y)
-        loss.backward(retain_graph=True)
-    for name, param in model.named_parameters():
-        # multiple by batch size to get the original gradient
-        all_grad = BATCH_SIZE * param.grad_batch.reshape(BATCH_SIZE, -1)
-        jac_list += torch.matmul(all_grad, all_grad.t())
-        param.grad_batch = None
-    JJT = jac_list / BATCH_SIZE
+    batch_grad_list = 0
+    if acc_test:
+        with backpack(Fisher(), BatchGrad()):
+            loss = loss_function(output, y)
+            loss.backward(retain_graph=True)
+    else:
+        with backpack(Fisher()):
+            loss = loss_function(output, y)
+            loss.backward(retain_graph=True)
 
-    return JJT
-
-def optimal_JJT():
-
-    jac_list = 0
-    jac_list_linear = 0
-    jac_list_conv = 0
-    L = []
-
-    with backpack(Fisher()):
-        loss = loss_function(output, y)
-        loss.backward(retain_graph=True)
     for name, param in model.named_parameters():
         fisher_vals = param.fisher
-        # L.append([fisher_vals / BATCH_SIZE, name]) 
-        if '0' not in name and '2' not in name and '4' not in name :
-            jac_list_linear += fisher_vals
-        else:
-            jac_list_conv += fisher_vals
-
         jac_list += fisher_vals
+
+        if acc_test:
+            all_grad = BATCH_SIZE * param.grad_batch.reshape(BATCH_SIZE, -1)
+            batch_grad_list += torch.matmul(all_grad, all_grad.t())
+            param.grad_batch = None
+
         param.fisher = None
         param.grad = None
+
+    JJT_backpack = batch_grad_list / BATCH_SIZE
     JJT = jac_list / BATCH_SIZE
-    JJT_linear = jac_list_linear / BATCH_SIZE
-    JJT_conv = jac_list_conv / BATCH_SIZE
-    # if torch.allclose(JJT, JJT_conv + JJT_linear) == False:
-    #     print('JJT:', JJT)
-    #     print('JJT_conv:', JJT_conv)
-    #     print('JJT_linear:', JJT_linear)
-    return JJT, JJT_linear, JJT_conv
+
+    if acc_test:
+        print('Estimation Error:', get_diff(JJT_backpack, JJT))
+
+    return JJT
 
 def optimal_JJT_blk():
     jac_list = 0
@@ -215,14 +227,16 @@ for epoch in range(EPOCHS):
 
         ######## calling individual function for JJT computation
         ### Our extension
-        JJT_opt, JJT_linear, JJT_conv = optimal_JJT()
+        
+        JJT_opt = optimal_JJT(acc_test=False)
         NGD_kernel = JJT_opt
         v_mat = torch.linalg.inv(NGD_kernel + DAMPING * torch.eye(BATCH_SIZE))
         v = torch.sum(v_mat, dim=0)/BATCH_SIZE
+        # print(JJT_opt)
+
         # print('linear + diag:', get_diff(JJT_opt, JJT_linear + JJT_conv * torch.eye(BATCH_SIZE)))
         # print('linear:', get_diff(JJT_opt, JJT_linear))
         # print('^^^^^^^^^^^^^^')
-        # print(JJT_opt)
         # x = torch.ones(1, BATCH_SIZE, BATCH_SIZE)
         # x = x.repeat(num_classes, 1, 1)
         # eye_blk = torch.block_diag(*x)
@@ -301,6 +315,7 @@ for epoch in range(EPOCHS):
         # loss = loss_function(output, y)
         loss = loss_function_none(output, y)
         loss = torch.sum(loss * v)
+
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
@@ -309,7 +324,7 @@ for epoch in range(EPOCHS):
 
         
 
-        if batch_idx % 50 == 0:
+        if batch_idx % 1 == 0:
             acc_list.append(accuracy)
             time_list.append(time.time() - start_time)
             loss_list.append(loss)
