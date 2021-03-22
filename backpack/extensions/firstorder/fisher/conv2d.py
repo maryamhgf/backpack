@@ -1,11 +1,10 @@
 from backpack.core.derivatives.conv2d import Conv2DDerivatives
 from backpack.extensions.firstorder.fisher.fisher_base import FisherBase
-from torch import einsum, matmul, sum, numel, sqrt
+from torch import einsum, matmul, sum, numel, sqrt, norm
 from torch.nn import Unfold
 from torch.nn.functional import conv1d, conv2d, conv3d
 from backpack.utils.ein import eingroup
 from backpack.utils.conv import unfold_func
-# import time
 
 MODE = 0
 class FisherConv2d(FisherBase):
@@ -20,29 +19,27 @@ class FisherConv2d(FisherBase):
             n = g_out[0].shape[0]
             g_out_sc = n * g_out[0]
             input = unfold_func(module)(module.input0)
-
             grad_output_viewed = g_out_sc.reshape(g_out_sc.shape[0], g_out_sc.shape[1], -1)
             
+            N = input.shape[0]
+            K = input.shape[1]
+            L = input.shape[2]
+            M = grad_output_viewed.shape[1]
 
-            # TODO: further optimization for vgg16:
+            # extra optimization for some networks such as VGG16
+            if (L*L) * (K + M) < K * M :
+                II = einsum("nkl,qkp->nqlp", (input, input))
+                GG = einsum("nml,qmp->nqlp", (grad_output_viewed, grad_output_viewed))
+                out = einsum('nqlp->nq', II * GG)                
+                x1 = einsum("nkl,mk->nml", (input, grad_reshape))
+                grad_prod = einsum("nml,nml->n", (x1, grad_output_viewed))
+            else:
+                AX = einsum("nkl,nml->nkm", (input, grad_output_viewed))
+                # compute vector jacobian product in optimization method
+                grad_prod = einsum("nkm,mk->n", (AX, grad_reshape))
 
-            # N = input.shape[0]
-            # K = input.shape[1]
-            # L = input.shape[2]
-            # M = grad_output_viewed.shape[1]
-            # print('N %d K %d L %d M %d' % (N,K,L,M))
-            # print( L * (K + M) < K * M)
-            # print('g_out_sc:', g_out_sc.shape)
-            # print(module.input0.shape)
-            AX = einsum("nkl,nml->nkm", (input, grad_output_viewed))
-            # compute vector jacobian product in optimization method
-            grad_prod = einsum("nkm,mk->n", (AX, grad_reshape))
-
-            AX = AX.reshape(n , -1)
-            out = matmul(AX, AX.t())
-            # en = time.time()
-            # print('Elapsed Time Conv2d Mode 0:', en - st)
-
+                AX = AX.reshape(n , -1)
+                out = matmul(AX, AX.t())
 
             return (out, grad_prod)
         elif MODE == 2:
