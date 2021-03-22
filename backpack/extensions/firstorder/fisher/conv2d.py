@@ -14,14 +14,17 @@ class FisherConv2d(FisherBase):
 
     def weight(self, ext, module, g_inp, g_out, bpQuantities):
         if MODE == 0: # my implementation
-            # st = time.time()
-
+            grad = module.weight.grad
+            grad_reshape = grad.reshape(grad.shape[0], -1)
+            # print(grad_reshape.shape)
             n = g_out[0].shape[0]
             g_out_sc = n * g_out[0]
             input = unfold_func(module)(module.input0)
 
             grad_output_viewed = g_out_sc.reshape(g_out_sc.shape[0], g_out_sc.shape[1], -1)
             
+
+            # TODO: further optimization for vgg16:
 
             # N = input.shape[0]
             # K = input.shape[1]
@@ -32,11 +35,16 @@ class FisherConv2d(FisherBase):
             # print('g_out_sc:', g_out_sc.shape)
             # print(module.input0.shape)
             AX = einsum("nkl,nml->nkm", (input, grad_output_viewed))
+            # compute vector jacobian product in optimization method
+            grad_prod = einsum("nkm,mk->n", (AX, grad_reshape))
+
             AX = AX.reshape(n , -1)
             out = matmul(AX, AX.t())
             # en = time.time()
             # print('Elapsed Time Conv2d Mode 0:', en - st)
-            return out
+
+
+            return (out, grad_prod)
         elif MODE == 2:
             # st = time.time()
 
@@ -66,6 +74,9 @@ class FisherConv2d(FisherBase):
             # print('Elapsed Time Conv2d Mode 4:', en - st)
 
             return out
+
+        elif MODE == 6:
+            return 0.
         else:
             raise NotImplementedError(
                         "Extension SUSPENDED")
@@ -74,7 +85,13 @@ class FisherConv2d(FisherBase):
     def bias(self, ext, module, g_inp, g_out, bpQuantities):
         n = g_out[0].shape[0]
         g_out_sc = n * g_out[0]
-        return einsum("nchw,lchw->nl", g_out_sc, g_out_sc)
+
+        # compute vector jacobian product in optimization method
+        grad = module.bias.grad
+        grad_prod = einsum("nchw,c->n", (g_out_sc, grad))
+
+        out = einsum("nchw,lchw->nl", g_out_sc, g_out_sc)
+        return (out, grad_prod)
 
 
 

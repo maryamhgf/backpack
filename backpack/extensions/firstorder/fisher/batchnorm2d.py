@@ -19,12 +19,23 @@ class FisherBatchNorm2d(FisherBase):
         xhat = (input - mean) / (var + module.eps).sqrt()
         dw = g_out_sc * xhat
         out = einsum("nihw,lihw->nl", dw, dw)
+
+        # compute vector jacobian product in optimization method
+        grad = module.weight.grad
+        grad_prod = einsum("nihw,i->n", (dw, grad))
+
         # en = time.time()
         # print('Elapsed Time in BatchNorm2d:', en - st)
-        return out
+        return (out, grad_prod)
 
     def bias(self, ext, module, g_inp, g_out, backproped):
         n = g_out[0].shape[0]
         g_out_sc = n * g_out[0]
-        return  einsum("nihw,lihw->nl", g_out_sc, g_out_sc)
+
+        # compute vector jacobian product in optimization method
+        grad = module.bias.grad
+        grad_prod = einsum("nihw,i->n", (g_out_sc, grad))
+
+        out = einsum("nihw,lihw->nl", g_out_sc, g_out_sc)
+        return (out, grad_prod)
 

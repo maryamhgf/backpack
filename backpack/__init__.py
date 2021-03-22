@@ -16,7 +16,7 @@ class backpack:
     :code:`backward` calls in the current :code:`with` block.
     """
 
-    def __init__(self, *exts: BackpropExtension, debug=False):
+    def __init__(self, *exts: BackpropExtension, debug=False, mem_clean_up = True):
         """Activate the Backpack extensions.
 
         Example usage:
@@ -62,6 +62,7 @@ class backpack:
 
         self.exts = exts
         self.debug = debug
+        self.mem_clean_up = mem_clean_up
 
     def __enter__(self):
         self.old_CTX = CTX.get_active_exts()
@@ -107,6 +108,7 @@ def memory_cleanup(module):
 
     Deletes the attributes created by `hook_store_io` and `hook_store_shapes`.
     """
+    # if self.mem_clean_up:
     if hasattr(module, "output"):
         delattr(module, "output")
     if hasattr(module, "output_shape"):
@@ -134,7 +136,13 @@ def hook_run_extensions(module, g_inp, g_out):
             extensions.curvmatprod.PCHMP,
         )
     ):
-        memory_cleanup(module)
+        
+        if CTX.get_active_exts():
+            memory_cleanup(module)
+        # else:
+        #     print('NO MEM CLEANUP\n')
+        #     print(CTX.get_active_exts())
+        
 
 
 def extend(module: torch.nn.Module, debug=False):

@@ -5,6 +5,7 @@ import torch.optim as optim
 from backpack.extensions import Fisher, BatchGrad
 from torchsummary import summary
 import time
+import math
 
 # fixing HTTPS issue on Colab
 from six.moves import urllib
@@ -24,7 +25,8 @@ EPOCHS = 1
 PLOT = False
 num_classes = 10
 STEP_SIZE = 0.1
-DAMPING = 0.1
+alpha_lm = 10
+taw = 0.01
 MAX_ITER = 60000//BATCH_SIZE
 torch.manual_seed(0)
 
@@ -52,52 +54,47 @@ mnist_loader = torch.utils.data.dataloader.DataLoader(
 
 
 ##### base model from backpack website:
-# model = torch.nn.Sequential(
-#     torch.nn.Conv2d(1, 50, 3, 1, padding = (1,1)),
-#     # torch.nn.BatchNorm2d(50),
-#     torch.nn.ReLU(),
+model = torch.nn.Sequential(
+    torch.nn.Conv2d(1, 10, 3, 1, padding = (1,1)),
+    torch.nn.BatchNorm2d(10),
+    torch.nn.ReLU(),
 
-#     torch.nn.Conv2d(50, 50, 3, 1, padding = (1,1)),
-#     # torch.nn.BatchNorm2d(50),
-#     torch.nn.ReLU(),
+    # torch.nn.Conv2d(10, 10, 3, 1, padding = (1,1)),
+    # torch.nn.BatchNorm2d(10),
+    # torch.nn.ReLU(),
 
-#     torch.nn.Conv2d(50, 10, 3, 1, padding = (1,1)),
-#     # torch.nn.BatchNorm2d(10),
-#     torch.nn.ReLU(),
+    # torch.nn.Conv2d(10, 10, 3, 1, padding = (1,1)),
+    # torch.nn.BatchNorm2d(10),
+    # torch.nn.ReLU(),
 
-#     torch.nn.Flatten(), 
-#     torch.nn.Linear(28*28*10, 20),
-#     # torch.nn.BatchNorm1d(20),
-
-#     torch.nn.ReLU(),
-
-#     torch.nn.Linear(20, 100),
-#     # torch.nn.BatchNorm1d(100),
-#     torch.nn.ReLU(),
-
-#     torch.nn.Linear(100, 10),
+    torch.nn.Flatten(), 
+    torch.nn.Linear(28*28*10, 10),
+    
 
 
-# ).to(device)
+).to(device)
 
 
 
 ##### fully connected network. Test for linear timings.
-model = torch.nn.Sequential(
-    torch.nn.Flatten(), 
-    torch.nn.Linear(28*28, 500),
-    torch.nn.BatchNorm1d(500),
-    torch.nn.ReLU(),
-    torch.nn.Linear(500, 500),
-    torch.nn.ReLU(),
-    torch.nn.Linear(500, 500),
-    torch.nn.ReLU(),
-    torch.nn.Linear(500, 500),
-    torch.nn.ReLU(),
-    torch.nn.Linear(500, 500),
-    torch.nn.ReLU(),
-    torch.nn.Linear(500, 10)
-).to(device)
+# model = torch.nn.Sequential(
+#     # torch.nn.Conv2d(1, 7, 3, 1, padding = (1,1)),
+#     # torch.nn.ReLU(),
+#     # torch.nn.Conv2d(7, 13, 3, 1, padding = (1,1)),
+#     # torch.nn.BatchNorm2d(13),
+#     # torch.nn.ReLU(),
+#     torch.nn.Flatten(), 
+#     torch.nn.Linear(28*28, 500),
+#     torch.nn.BatchNorm1d(500),
+#     torch.nn.ReLU(),
+#     torch.nn.Linear(500, 500),
+#     torch.nn.ReLU(),
+#     # torch.nn.Linear(500, 500),
+#     # torch.nn.ReLU(),
+#     # torch.nn.Linear(500, 500),
+#     # torch.nn.ReLU(),
+#     torch.nn.Linear(500, 10)
+# ).to(device)
 
 summary(model, ( 1, 28, 28))
 
@@ -163,111 +160,92 @@ def get_diff(A, B):
 
 #     return JJT
 
-def optimal_JJT(acc_test=False):
+def optimal_JJT(outputs, targets, grad_org, acc_test=False):
     jac_list = 0
-    batch_grad_list = 0
+    batch_grad_kernel = 0
+    batch_grad_list = []
+    vjp = 0
+    # note: the avergae gradient computed here is not useful
+    # in other words, param.grad is useless!
     if acc_test:
         with backpack(Fisher(), BatchGrad()):
-            loss = loss_function(output, y)
+            loss = loss_function(outputs, targets)
             loss.backward(retain_graph=True)
     else:
         with backpack(Fisher()):
-            loss = loss_function(output, y)
+            loss = loss_function(outputs, targets)
             loss.backward(retain_graph=True)
 
     for name, param in model.named_parameters():
         fisher_vals = param.fisher
-        jac_list += fisher_vals
-
+        jac_list += fisher_vals[0]
+        vjp += fisher_vals[1]
         if acc_test:
-            all_grad = BATCH_SIZE * param.grad_batch.reshape(BATCH_SIZE, -1)
-            batch_grad_list += torch.matmul(all_grad, all_grad.t())
+            batch_grad = BATCH_SIZE * param.grad_batch.reshape(BATCH_SIZE, -1)
+            batch_grad_list.append(batch_grad)
+            batch_grad_kernel += torch.matmul(batch_grad, batch_grad.t())
             param.grad_batch = None
-
         param.fisher = None
-        param.grad = None
-
-    JJT_backpack = batch_grad_list / BATCH_SIZE
+        # param.grad = None
+    JJT_backpack = batch_grad_kernel / BATCH_SIZE
     JJT = jac_list / BATCH_SIZE
-
     if acc_test:
-        print('Estimation Error:', get_diff(JJT_backpack, JJT))
+        all_grad = torch.cat(batch_grad_list, 1)
+        backpack_vjp = torch.matmul(all_grad, grad_org.t()).view_as(vjp)
+        print('NGD kernel estimation error:', get_diff(JJT_backpack, JJT))
+        print('Vector Jacobian error:', get_diff(backpack_vjp, vjp))
+    return JJT, vjp
 
-    return JJT
-
-def optimal_JJT_blk():
-    jac_list = 0
-    bc = BATCH_SIZE * num_classes
-    # L = []
-
-    with backpack(TRIAL(MODE)):
-        loss = loss_function(output, y)
-        loss.backward(retain_graph=True)
-    for name, param in model.named_parameters():
-        trial_vals = param.trial
-        # L.append([trial_vals / BATCH_SIZE, name])
-        jac_list += torch.block_diag(*trial_vals)
-        param.trial = None
-    JJT = jac_list / BATCH_SIZE
-    return JJT
 
 acc_list = []
 time_list = []
 loss_list = []
 epoch_time_list = []
 start_time= time.time()
+loss_prev = 0.
+taylor_appx_prev = 0.
 for epoch in range(EPOCHS):
     start_time_epoch = time.time()
-    for batch_idx, (x, y) in enumerate(mnist_loader):
-        # y, indices = torch.sort(y)
-        # x = x[indices, :, :, :]
-        x, y = x.to(device), y.to(device)
-        output = model(x)
-        accuracy = get_accuracy(output, y)
+    for batch_idx, (inputs, targets) in enumerate(mnist_loader):
+
+        DAMPING = alpha_lm + taw
+        inputs, targets = inputs.to(device), targets.to(device)
+        outputs = model(inputs)
+        accuracy = get_accuracy(outputs, targets)
 
         ######## calling individual function for JJT computation
         ### Our extension
-        
-        JJT_opt = optimal_JJT(acc_test=False)
-        NGD_kernel = JJT_opt
-        v_mat = torch.linalg.inv(NGD_kernel + DAMPING * torch.eye(BATCH_SIZE))
-        v = torch.sum(v_mat, dim=0)/BATCH_SIZE
-        # print(JJT_opt)
 
-        # print('linear + diag:', get_diff(JJT_opt, JJT_linear + JJT_conv * torch.eye(BATCH_SIZE)))
-        # print('linear:', get_diff(JJT_opt, JJT_linear))
-        # print('^^^^^^^^^^^^^^')
-        # x = torch.ones(1, BATCH_SIZE, BATCH_SIZE)
-        # x = x.repeat(num_classes, 1, 1)
-        # eye_blk = torch.block_diag(*x)
-        # JJT_opt_blk = JJT_opt * eye_blk
-        # JJT_conv_blk = JJT_conv * eye_blk
-        # JJT_fused = JJT_conv_blk + JJT_linear
+        # first compute the original gradient
+        acc_test = False
+        optimizer.zero_grad()
+        loss = loss_function(outputs, targets)
+        loss.backward(retain_graph=True)
+        loss_org = loss.item()
 
-        ### Blocked NGD version
-        # start_time = time.time()
-        # JJT_opt_blk = optimal_JJT_blk()
-        # print(torch.norm(JJT_opt))
-        # print(JJT_opt)
-        # time_opt = time.time() - start_time
+        grad_org = []
+        grad_dict = {}
+        for name, param in model.named_parameters():
+            grad_org.append(param.grad.reshape(1, -1))
+            grad_dict[name] = param.grad.clone()
+
+        grad_org = torch.cat(grad_org, 1)
+        ###### now we have to compute the true fisher
+        with torch.no_grad():
+            sampled_y = torch.multinomial(torch.nn.functional.softmax(outputs, dim=1),1).squeeze().to(device)
+            
+        NGD_kernel, vjp = optimal_JJT(outputs, sampled_y, grad_org, acc_test)
+        NGD_inv = torch.linalg.inv(NGD_kernel + DAMPING * torch.eye(BATCH_SIZE))
+        v = torch.matmul(NGD_inv, vjp.unsqueeze(1))
+
+        ####### rescale v:
+        v_sc = v/(BATCH_SIZE * DAMPING)
+        # print(v)
 
         # plotting NGD kernel for some iterations
         if PLOT and batch_idx in [2, 10, 50, 500] :
-            # JJT_opt_blk = optimal_JJT_blk()
 
-            JJT_opt, JJT_linear, JJT_conv = optimal_JJT()
-            # x = torch.ones(1, BATCH_SIZE, BATCH_SIZE)
-            # x = x.repeat(num_classes, 1, 1)
-            # eye_blk = torch.block_diag(*x)
-            # diff = JJT_opt - JJT_opt*eye_blk
-            # u, s, vh = torch.linalg.svd(diff)
-            # s_normal = torch.cumsum(s, dim = 0)/torch.sum(s)
-            # print(s_normal.numpy())
-            # fig, ax = plt.subplots()
-            # im = ax.plot(s_normal)
-            # print(s)
-            # fig.colorbar(im,  orientation='horizontal')
-            # plt.show()
+            JJT_opt, JJT_linear, JJT_conv = optimal_JJT() 
             
             fig, ax = plt.subplots()
             im = ax.imshow(JJT_opt , cmap='viridis')
@@ -293,41 +271,58 @@ for epoch in range(EPOCHS):
                     for row in range(2):
                         ax = axs[row]
                         data = L[row + c][0].reshape(bc, bc)
-                        print('name:', L[row + c][1])
-                        print('max data:', torch.max(data))
-                        print('min data:', torch.min(data))
-                        print('average data:', torch.mean(data))
-                        print('norm data:', torch.norm(data))
-
                         ax.set_title(L[row + c][1])
                         pcm = ax.imshow(data, cmap='viridis')
                         fig.colorbar(pcm,  ax=ax)
                     plt.show()
-        
-
-        ### backpack original batch grad
-        # start_time = time.time()
-        # JJT_backpack = backpack_batch_grad()
-        # print(JJT_backpack)
-        # time_vmap = time.time() - start_time
       
-        # applying one step for optimization
-        # loss = loss_function(output, y)
-        loss = loss_function_none(output, y)
-        loss = torch.sum(loss * v)
-
-        loss.backward()
-        optimizer.step()
+        ###### applying one step for optimization
         optimizer.zero_grad()
+        loss = loss_function_none(outputs, sampled_y)
+        loss = torch.sum(loss * v_sc)
+        loss.backward()
 
+        # last part of SMW formula
+        grad_new = []
+        for name, param in model.named_parameters():
+            param.grad = grad_dict[name] / DAMPING -  param.grad
+            # param.grad = grad_dict[name] 
+            grad_new.append(param.grad.reshape(1, -1))
+        grad_new = torch.cat(grad_new, 1)   
+        optimizer.step()
         
 
-        
+        gp = torch.sum( -grad_new * grad_org)
+        x = (vjp.unsqueeze(1) -  torch.matmul(NGD_kernel, v) )/ math.sqrt(BATCH_SIZE)
+        x = x / DAMPING
+        pBp = 0.5 * torch.sum(x * x)
+        taylor_appx = loss_org + STEP_SIZE *  gp + STEP_SIZE * STEP_SIZE * pBp
+        # taylor_appx = loss_org + gp + pBp
+        eps = 0.25
+        if batch_idx > 0 or epoch > 0:
+            ro =  (loss_org - loss_prev)/ (loss_org - taylor_appx_prev)
+            # print(ro)
+            if ro > eps:
+                alpha_lm = alpha_lm * 0.99
+            else:
+                alpha_lm = alpha_lm * 1.01
+        #     # print(ro)
+        loss_prev = loss_org
+        taylor_appx_prev = taylor_appx
+        # print(descent)
 
-        if batch_idx % 1 == 0:
+        # print(get_diff(grad_new, grad_org))
+        # if batch_idx > 100:
+        #     break
+        if batch_idx % 10 == 0:
+            print('real %f appx %f first order %f' % (loss_org, taylor_appx, loss_org + STEP_SIZE *  gp))
+            print('damping:', DAMPING)
+            if batch_idx > 0:
+                print('ro:', ro)
             acc_list.append(accuracy)
             time_list.append(time.time() - start_time)
-            loss_list.append(loss)
+            loss_list.append(loss_org)
+            
             # print('Seq vs vmap error:', get_diff(JJT_naive_seq, JJT_naive_vmap))
             # print('opt vs backpack error:', get_diff(JJT_backpack, JJT_opt))
             # print('opt vs linear error:', get_diff(JJT_opt, JJT_linear))
@@ -342,7 +337,7 @@ for epoch in range(EPOCHS):
             print('Elapsed time:', time.time() - start_time_epoch)
             print(
                 "Iteration %3.d/%d   " % (batch_idx, MAX_ITER) +
-                "Minibatch Loss %.3f  " % (loss) +
+                "Minibatch Loss %.3f  " % (loss_org) +
                 "Accuracy %.0f" % (accuracy * 100) + "%"
             )
 

@@ -9,22 +9,24 @@ class FisherLinear(FisherBase):
         super().__init__(derivatives=LinearDerivatives(), params=["bias", "weight"])
 
     def weight(self, ext, module, g_inp, g_out, backproped):
-        """Compute second moments without expanding individual gradients.
-
-        Overwrites the base class implementation that computes the gradient second
-        moments from individual gradients. This approach is more memory-efficient.
-
-        Note:
-            For details, see page 12 (paragraph about "second moment") of the
-            paper (https://arxiv.org/pdf/1912.10985.pdf).
-        """
+        grad = module.weight.grad
         n = g_out[0].shape[0]
         g_out_sc = n * g_out[0]
         B =  einsum("ni,li->nl", (module.input0, module.input0))   
         A =  einsum("no,lo->nl", (g_out_sc, g_out_sc))
-        return A * B
+
+        # compute vector jacobian product in optimization method
+        grad_prod = einsum("ni,oi->no", (module.input0, grad))
+        grad_prod = einsum("no,no->n", (grad_prod, g_out_sc))
+
+        return (A * B, grad_prod)
 
     def bias(self, ext, module, g_inp, g_out, backproped):
+        grad = module.bias.grad
         n = g_out[0].shape[0]
         g_out_sc = n * g_out[0]
-        return einsum("no,lo->nl", g_out_sc, g_out_sc)
+
+        # compute vector jacobian product in optimization method
+        grad_prod = einsum("no,o->n", (g_out_sc, grad))
+        out = einsum("no,lo->nl", g_out_sc, g_out_sc)
+        return (out, grad_prod)

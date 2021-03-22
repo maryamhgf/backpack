@@ -16,12 +16,22 @@ class FisherBatchNorm1d(FisherBase):
         mean = input.mean(dim=0)
         var = input.var(dim=0, unbiased=False)
         xhat = (input - mean) / (var + module.eps).sqrt()
-
         dw = g_out_sc * xhat
-        return matmul(dw, dw.t())
+
+        # compute vector jacobian product in optimization method
+        grad = module.weight.grad
+        grad_prod = einsum("nk,k->n", (dw, grad))
+
+        return (matmul(dw, dw.t()), grad_prod)
 
     def bias(self, ext, module, g_inp, g_out, backproped):
         n = g_out[0].shape[0]
         g_out_sc = n * g_out[0]
-        return einsum("no,lo->nl", g_out_sc, g_out_sc)
+
+        # compute vector jacobian product in optimization method
+        grad = module.bias.grad
+        grad_prod = einsum("no,o->n", (g_out_sc, grad))
+
+        out = einsum("no,lo->nl", g_out_sc, g_out_sc)
+        return (out, grad_prod)
 

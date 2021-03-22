@@ -38,7 +38,6 @@ class CrossEntropyLossDerivatives(BaseLossDerivatives):
 
     def _sqrt_hessian_sampled(self, module, g_inp, g_out, mc_samples=1):
         self._check_2nd_order_parameters(module)
-
         M = mc_samples
         C = module.input0.shape[1]
 
