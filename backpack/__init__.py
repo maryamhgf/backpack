@@ -136,7 +136,6 @@ def hook_run_extensions(module, g_inp, g_out):
             extensions.curvmatprod.PCHMP,
         )
     ):
-        
         if CTX.get_active_exts():
             memory_cleanup(module)
         # else:

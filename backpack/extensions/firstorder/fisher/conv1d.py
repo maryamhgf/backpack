@@ -3,5 +3,6 @@ from backpack.extensions.firstorder.fisher.fisher_base import FisherBase
 
 
 class FisherConv1d(FisherBase):
-    def __init__(self):
+    def __init__(self, silent=False):
+        self.silent = silent
         super().__init__(derivatives=Conv1DDerivatives(), params=["bias", "weight"])

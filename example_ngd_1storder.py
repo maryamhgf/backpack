@@ -55,45 +55,27 @@ mnist_loader = torch.utils.data.dataloader.DataLoader(
 
 ##### base model from backpack website:
 model = torch.nn.Sequential(
-    torch.nn.Conv2d(1, 10, 3, 1, padding = (1,1)),
-    torch.nn.BatchNorm2d(10),
+    torch.nn.Conv2d(1, 2, 3, 1, padding = (1,1)),
+    # torch.nn.BatchNorm2d(2),
     torch.nn.ReLU(),
-
-    # torch.nn.Conv2d(10, 10, 3, 1, padding = (1,1)),
-    # torch.nn.BatchNorm2d(10),
-    # torch.nn.ReLU(),
-
-    # torch.nn.Conv2d(10, 10, 3, 1, padding = (1,1)),
-    # torch.nn.BatchNorm2d(10),
-    # torch.nn.ReLU(),
-
     torch.nn.Flatten(), 
-    torch.nn.Linear(28*28*10, 10),
-    
-
-
-).to(device)
+    torch.nn.Linear(28*28*2, 10),
+    ).to(device)
 
 
 
 ##### fully connected network. Test for linear timings.
 # model = torch.nn.Sequential(
-#     # torch.nn.Conv2d(1, 7, 3, 1, padding = (1,1)),
-#     # torch.nn.ReLU(),
-#     # torch.nn.Conv2d(7, 13, 3, 1, padding = (1,1)),
-#     # torch.nn.BatchNorm2d(13),
-#     # torch.nn.ReLU(),
 #     torch.nn.Flatten(), 
-#     torch.nn.Linear(28*28, 500),
-#     torch.nn.BatchNorm1d(500),
+#     torch.nn.Linear(28*28, 100),
 #     torch.nn.ReLU(),
-#     torch.nn.Linear(500, 500),
+#     torch.nn.Linear(100, 100),
 #     torch.nn.ReLU(),
-#     # torch.nn.Linear(500, 500),
-#     # torch.nn.ReLU(),
-#     # torch.nn.Linear(500, 500),
-#     # torch.nn.ReLU(),
-#     torch.nn.Linear(500, 10)
+#     torch.nn.Linear(100, 100),
+#     torch.nn.ReLU(),
+#     torch.nn.Linear(100, 100),
+#     torch.nn.ReLU(),
+#     torch.nn.Linear(100, 10)
 # ).to(device)
 
 summary(model, ( 1, 28, 28))
@@ -145,28 +127,16 @@ def get_diff(A, B):
     return torch.norm(A - B)/torch.norm(A)
 
 
-# def backpack_batch_grad():
-#     jac_list = 0
-#     with backpack(BatchGrad()):
-#         loss = loss_function(output, y)
-#         loss.backward(retain_graph=True)
-#     for name, param in model.named_parameters():
-#         # multiple by batch size to get the original gradient
-#         all_grad = BATCH_SIZE * param.grad_batch.reshape(BATCH_SIZE, -1)
-#         jac_list += torch.matmul(all_grad, all_grad.t())
-#         param.grad_batch = None
-#         param.grad = None
-#     JJT = jac_list / BATCH_SIZE
-
-#     return JJT
-
-def optimal_JJT(outputs, targets, grad_org, acc_test=False):
+def optimal_JJT(outputs, targets, grad_org, acc_test=False, acc_hard_test=False):
     jac_list = 0
     batch_grad_kernel = 0
     batch_grad_list = []
     vjp = 0
-    # note: the avergae gradient computed here is not useful
-    # in other words, param.grad is useless!
+    loop_grad_kernel = 0
+    loop_grad_list = []
+    # note acc_test is useful when we don't have batchnorm
+    # in case of batchnorm backpack fails and we need a for loop for individual grads
+    
     if acc_test:
         with backpack(Fisher(), BatchGrad()):
             loss = loss_function(outputs, targets)
@@ -187,13 +157,43 @@ def optimal_JJT(outputs, targets, grad_org, acc_test=False):
             param.grad_batch = None
         param.fisher = None
         # param.grad = None
+
+    for name, param in model.named_parameters():
+        param.grad = None
+
+    if acc_hard_test:
+        for i in range(BATCH_SIZE):
+            loop_grad_inner_list = []
+
+            loss = loss_function(outputs[i, :].unsqueeze(0), targets[i].unsqueeze(0))
+            loss.backward(retain_graph=True)
+            for name, param in model.named_parameters():
+                loop_grad =  param.grad.reshape(1, -1)
+                loop_grad_inner_list.append(loop_grad)
+                param.grad = None
+            # print(loop_grad_list)
+            loop_grad = torch.cat(loop_grad_inner_list, 1)
+            loop_grad_list.append(loop_grad)
+        loop_grad_all = torch.cat(loop_grad_list, 0)
+        loop_grad_kernel += torch.matmul(loop_grad_all, loop_grad_all.t())
+    
+
     JJT_backpack = batch_grad_kernel / BATCH_SIZE
     JJT = jac_list / BATCH_SIZE
+    JJT_loop = loop_grad_kernel / BATCH_SIZE
     if acc_test:
         all_grad = torch.cat(batch_grad_list, 1)
         backpack_vjp = torch.matmul(all_grad, grad_org.t()).view_as(vjp)
         print('NGD kernel estimation error:', get_diff(JJT_backpack, JJT))
+
+        if get_diff(JJT_backpack, JJT) > 0.2:
+            print('JJT_backpack:\n', JJT_backpack)
+            print('JJT:\n', JJT)
         print('Vector Jacobian error:', get_diff(backpack_vjp, vjp))
+
+    if acc_hard_test:
+        print('NGD kernel estimation error with loop:', get_diff(JJT_loop, JJT))
+
     return JJT, vjp
 
 
@@ -217,7 +217,8 @@ for epoch in range(EPOCHS):
         ### Our extension
 
         # first compute the original gradient
-        acc_test = False
+        acc_test = True
+        acc_hard_test = True
         optimizer.zero_grad()
         loss = loss_function(outputs, targets)
         loss.backward(retain_graph=True)
@@ -234,13 +235,12 @@ for epoch in range(EPOCHS):
         with torch.no_grad():
             sampled_y = torch.multinomial(torch.nn.functional.softmax(outputs, dim=1),1).squeeze().to(device)
             
-        NGD_kernel, vjp = optimal_JJT(outputs, sampled_y, grad_org, acc_test)
+        NGD_kernel, vjp = optimal_JJT(outputs, sampled_y, grad_org, acc_test, acc_hard_test)
         NGD_inv = torch.linalg.inv(NGD_kernel + DAMPING * torch.eye(BATCH_SIZE))
         v = torch.matmul(NGD_inv, vjp.unsqueeze(1))
 
         ####### rescale v:
         v_sc = v/(BATCH_SIZE * DAMPING)
-        # print(v)
 
         # plotting NGD kernel for some iterations
         if PLOT and batch_idx in [2, 10, 50, 500] :
@@ -315,10 +315,10 @@ for epoch in range(EPOCHS):
         # if batch_idx > 100:
         #     break
         if batch_idx % 10 == 0:
-            print('real %f appx %f first order %f' % (loss_org, taylor_appx, loss_org + STEP_SIZE *  gp))
-            print('damping:', DAMPING)
-            if batch_idx > 0:
-                print('ro:', ro)
+            # print('real %f appx %f first order %f' % (loss_org, taylor_appx, loss_org + STEP_SIZE *  gp))
+            # print('damping:', DAMPING)
+            # if batch_idx > 0:
+                # print('ro:', ro)
             acc_list.append(accuracy)
             time_list.append(time.time() - start_time)
             loss_list.append(loss_org)
