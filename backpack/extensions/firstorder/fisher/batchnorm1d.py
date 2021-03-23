@@ -24,7 +24,7 @@ class FisherBatchNorm1d(FisherBase):
             grad = module.weight.grad
             grad_prod = einsum("nk,k->n", (dw, grad))
 
-            return (matmul(dw, dw.t()), grad_prod)
+            return (0.* matmul(dw, dw.t()), grad_prod)
         else:
             
             n = g_out[0].shape[0]
@@ -53,7 +53,7 @@ class FisherBatchNorm1d(FisherBase):
             grad_prod = einsum("no,o->n", (g_out_sc, grad))
 
             out = einsum("no,lo->nl", g_out_sc, g_out_sc)
-            return (out, grad_prod)
+            return (0.*out, grad_prod)
         else:
             n = g_out[0].shape[0]
             g_out_sc = n * g_out[0]

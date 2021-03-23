@@ -27,7 +27,7 @@ class FisherBatchNorm2d(FisherBase):
 
             # en = time.time()
             # print('Elapsed Time in BatchNorm2d:', en - st)
-            return (out, grad_prod)
+            return (0.*out, grad_prod)
         else:
             # st = time.time()
             n = g_out[0].shape[0]
@@ -55,7 +55,7 @@ class FisherBatchNorm2d(FisherBase):
             grad_prod = einsum("nihw,i->n", (g_out_sc, grad))
 
             out = einsum("nihw,lihw->nl", g_out_sc, g_out_sc)
-            return (out, grad_prod)
+            return (0.*out, grad_prod)
         else:
             # print('x'*100)
 
