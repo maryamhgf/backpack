@@ -134,17 +134,16 @@ def hook_run_extensions(module, g_inp, g_out):
             extensions.curvmatprod.HMP,
             extensions.curvmatprod.GGNMP,
             extensions.curvmatprod.PCHMP,
+
         )
     ):
-        if CTX.get_active_exts():
+        if CTX.get_active_exts() and module._keep_memory == False:
+            # print('module cleaned' , module)
             memory_cleanup(module)
-        # else:
-        #     print('NO MEM CLEANUP\n')
-        #     print(CTX.get_active_exts())
         
 
 
-def extend(module: torch.nn.Module, debug=False):
+def extend(module: torch.nn.Module, debug=False, keep_memory=False):
     """Extends the ``module`` to make it backPACK-ready.
 
     If the ``module`` has children, e.g. for a ``torch.nn.Sequential``,
@@ -160,7 +159,7 @@ def extend(module: torch.nn.Module, debug=False):
         print("[DEBUG] Extending", module)
 
     for child in module.children():
-        extend(child, debug=debug)
+        extend(child, debug=debug, keep_memory=keep_memory)
 
     module_was_already_extended = getattr(module, "_backpack_extend", False)
     if not module_was_already_extended:
@@ -168,5 +167,6 @@ def extend(module: torch.nn.Module, debug=False):
         CTX.add_hook_handle(module.register_forward_hook(hook_store_shapes))
         CTX.add_hook_handle(module.register_backward_hook(hook_run_extensions))
         module._backpack_extend = True
+        module._keep_memory = keep_memory
 
     return module
