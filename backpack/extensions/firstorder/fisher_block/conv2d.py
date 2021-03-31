@@ -99,7 +99,7 @@ class FisherBlockConv2d(FisherBlockBase):
             grad_prod = einsum("nml,nml->n", (x1, G))
             
             NGD_kernel = out / n
-            NGD_inv = inv(NGD_kernel + self.damping * eye(n))
+            NGD_inv = inv(NGD_kernel + self.damping * eye(n).to(grad.device))
             v = matmul(NGD_inv, grad_prod.unsqueeze(1)).squeeze()
 
             

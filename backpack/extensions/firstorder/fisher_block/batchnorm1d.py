@@ -26,20 +26,13 @@ class FisherBlockBatchNorm1d(FisherBlockBase):
 
         out = matmul(dw, dw.t())
         NGD_kernel = out / n
-        NGD_inv = inv(NGD_kernel + self.damping * eye(n))
+        NGD_inv = inv(NGD_kernel + self.damping * eye(n).to(grad.device))
         v = matmul(NGD_inv, grad_prod.unsqueeze(1)).squeeze()
 
         gv = einsum("n,nk->k", (v, G))
         gv = gv / n
 
         update = (grad - gv)/self.damping
-
-
-
-
-
-
-        
 
         module.I = I
         module.G = G
@@ -59,7 +52,7 @@ class FisherBlockBatchNorm1d(FisherBlockBase):
         out = einsum("no,lo->nl", g_out_sc, g_out_sc)
 
         NGD_kernel = out / n
-        NGD_inv = inv(NGD_kernel + self.damping * eye(n))
+        NGD_inv = inv(NGD_kernel + self.damping * eye(n).to(grad.device))
         v = matmul(NGD_inv, grad_prod.unsqueeze(1)).squeeze()
         gv = einsum("n,no->o", (v, g_out_sc))
         gv = gv / n

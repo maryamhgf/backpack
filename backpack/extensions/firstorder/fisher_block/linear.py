@@ -50,7 +50,7 @@ class FisherBlockLinear(FisherBlockBase):
         out = A * B 
         # out = 0
         NGD_kernel = out / n
-        NGD_inv = inv(NGD_kernel + self.damping * eye(n))
+        NGD_inv = inv(NGD_kernel + self.damping * eye(n).to(grad.device))
         v = matmul(NGD_inv, grad_prod.unsqueeze(1)).squeeze()
 
         gv = einsum("n,no->no", (v, G))
@@ -85,7 +85,7 @@ class FisherBlockLinear(FisherBlockBase):
 
 
         NGD_kernel = out / n
-        NGD_inv = inv(NGD_kernel + self.damping * eye(n))
+        NGD_inv = inv(NGD_kernel + self.damping * eye(n).to(grad.device))
         v = matmul(NGD_inv, grad_prod.unsqueeze(1)).squeeze()
         gv = einsum("n,no->o", (v, g_out_sc))
         gv = gv / n
