@@ -3,7 +3,7 @@ BackPACK Extensions
 """
 
 from .curvmatprod import GGNMP, HMP, PCHMP
-from .firstorder import BatchGrad, BatchL2Grad, SumGradSquared, Variance, Fisher
+from .firstorder import BatchGrad, BatchL2Grad, SumGradSquared, Variance, Fisher, FisherBlock
 from .secondorder import (
     TRIAL,
     HBP,
@@ -14,10 +14,13 @@ from .secondorder import (
     DiagGGNExact,
     DiagGGNMC,
     DiagHessian,
+    MNGD,
 )
 
 __all__ = [
+    "MNGD",
     "Fisher",
+    "FisherBlock",
     "TRIAL",
     "PCHMP",
     "GGNMP",

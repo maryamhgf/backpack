@@ -22,8 +22,10 @@ from .diag_ggn import DiagGGN, DiagGGNExact, DiagGGNMC
 from .trial import TRIAL
 from .diag_hessian import DiagHessian
 from .hbp import HBP, KFAC, KFLR, KFRA
+from .mngd import MNGD
 
 __all__ = [
+    "MNGD",
     "TRIAL",
     "DiagGGNExact",
     "DiagGGNMC",

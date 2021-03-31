@@ -87,6 +87,12 @@ def hook_store_io(module, input, output):
         setattr(module, "input{}".format(i), input[i])
     module.output = output
 
+def hook_param(grad):
+    """
+    sending the gradient to backward hook.
+    """
+    return grad    
+
 
 def hook_store_shapes(module, input, output):
     """Store dimensionality of output as buffer.
@@ -140,6 +146,8 @@ def hook_run_extensions(module, g_inp, g_out):
         if CTX.get_active_exts() and module._keep_memory == False:
             # print('module cleaned' , module)
             memory_cleanup(module)
+        # else:
+            # print('[WARN] No clean up...')
         
 
 
@@ -165,6 +173,9 @@ def extend(module: torch.nn.Module, debug=False, keep_memory=False):
     if not module_was_already_extended:
         CTX.add_hook_handle(module.register_forward_hook(hook_store_io))
         CTX.add_hook_handle(module.register_forward_hook(hook_store_shapes))
+        # if hasattr(module, "weight"):
+        #     if module.weight is not None:
+        #         CTX.add_hook_handle(module.weight.register_hook(hook_param))
         CTX.add_hook_handle(module.register_backward_hook(hook_run_extensions))
         module._backpack_extend = True
         module._keep_memory = keep_memory

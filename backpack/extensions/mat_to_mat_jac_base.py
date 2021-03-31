@@ -19,6 +19,7 @@ class MatToJacMat(ModuleExtension):
             ]
             return list(M_list)
         else:
+            
             return self.derivatives.jac_t_mat_prod(
                 module, grad_inp, grad_out, backproped
             )

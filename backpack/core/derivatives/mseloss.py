@@ -2,7 +2,7 @@
 
 from math import sqrt
 
-from torch import einsum, eye, normal
+from torch import einsum, eye, normal, cat
 from torch.nn import MSELoss
 
 from backpack.core.derivatives.basederivatives import BaseLossDerivatives
@@ -44,7 +44,10 @@ class MSELossDerivatives(BaseLossDerivatives):
         if self.normalized:
             sqrt_H = eye(D, device=module.input0.device)  # [D, D]
             sqrt_H = sqrt_H.unsqueeze(0).repeat(N, 1, 1)  # [N, D, D]
-            sqrt_H = einsum("nab->anb", sqrt_H)  # [D, N, D]
+            # sqrt_H = einsum("nab->anb", sqrt_H)  # [D, N, D]
+            sqrt_H = einsum("nab->nb", sqrt_H)  # [D, N, D]
+            # sqrt_H = sqrt_H.unsqueeze(0)
+            # sqrt_H = cat(2*[sqrt_H], 0)
         else:
             sqrt_H = sqrt(2) * eye(D, device=module.input0.device)  # [D, D]
             sqrt_H = sqrt_H.unsqueeze(0).repeat(N, 1, 1)  # [N, D, D]

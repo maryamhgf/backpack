@@ -1,0 +1,156 @@
+from backpack.core.derivatives.conv2d import Conv2DDerivatives
+from backpack.extensions.firstorder.fisher_block.fisher_block_base import FisherBlockBase
+from torch import einsum, matmul, sum, numel, sqrt, norm, eye, randint
+from torch.nn import Unfold, MaxPool2d, AvgPool2d
+from torch.nn.functional import conv1d, conv2d, conv3d
+from backpack.utils.ein import eingroup
+from backpack.utils.conv import unfold_func
+
+from torch.linalg import inv
+
+
+# import numpy as np
+# import seaborn as sns
+# import matplotlib.pylab as plt
+MODE = 0
+class FisherBlockConv2d(FisherBlockBase):
+    def __init__(self, damping=1.0):
+        self.damping = damping
+        super().__init__(derivatives=Conv2DDerivatives(), params=["bias", "weight"])
+
+    def weight(self, ext, module, g_inp, g_out, bpQuantities):
+        if MODE == 0: # my implementation
+
+
+            grad = module.weight.grad
+            # print(grad.shape)
+            grad_reshape = grad.reshape(grad.shape[0], -1)
+            n = g_out[0].shape[0]
+            g_out_sc = n * g_out[0]
+            
+
+            input = unfold_func(module)(module.input0)
+            I = input
+            grad_output_viewed = g_out_sc.reshape(g_out_sc.shape[0], g_out_sc.shape[1], -1)
+            G = grad_output_viewed
+
+            N = I.shape[0]
+            K = I.shape[1]
+            L = I.shape[2]
+            M = G.shape[1]
+            # print('N K L M', N, K, L , M)
+            # extra optimization for some networks such as VGG16
+            # if (L*L) * (K + M) < K * M :
+            #     II = einsum("nkl,qkp->nqlp", (input, input))
+            #     GG = einsum("nml,qmp->nqlp", (grad_output_viewed, grad_output_viewed))
+            #     out = einsum('nqlp->nq', II * GG)                
+            #     x1 = einsum("nkl,mk->nml", (input, grad_reshape))
+            #     grad_prod = einsum("nml,nml->n", (x1, grad_output_viewed))
+            # else:
+            #     AX = einsum("nkl,nml->nkm", (input, grad_output_viewed))
+            #     # compute vector jacobian product in optimization method
+            #     grad_prod = einsum("nkm,mk->n", (AX, grad_reshape))
+
+            #     AX = AX.reshape(n , -1)
+            #     out = matmul(AX, AX.t())
+
+            ## approximation:
+            # extra optimization for some networks such as VGG16
+            
+            # l = input.shape[2]
+            # prob = 0.01
+            # l_new = int(np.floor(prob * l))
+            # # print(l_new)
+            # # l_new = 10
+            # input_s =  input[:, :, randint(l, (l_new,))] 
+            # grad_s = grad_output_viewed[:, :, randint(l, (l_new,))]
+
+            # II = einsum("nkl,qkp->nq", (input, input))
+            # m = MaxPool2d(10, stride=3)
+            # m = AvgPool2d(20, stride=1)
+            # input_f = module.input0
+            # output_i = m(input_f)
+            # input_s = unfold_func(module)(output_i)
+            # output_g = m(g_out_sc)
+            # grad_s = output_g.reshape(output_g.shape[0], output_g.shape[1], -1)
+
+
+
+
+            # II = einsum("nkl,qkp->nqlp", (input_s, input_s))
+            # GG = einsum("nml,qmp->nq", (grad_output_viewed, grad_output_viewed))
+            # GG = einsum("nml,qmp->nqlp", (grad_s, grad_s))
+            # out_apx =  II * GG 
+            # IG = einsum('nqlp->nq', II * GG)
+            # out_apx =  IG 
+            AX = []
+            if (L*L) * (K + M) < K * M :
+                II = einsum("nkl,qkp->nqlp", (I, I))
+                GG = einsum("nml,qmp->nqlp", (G, G))
+                out = einsum('nqlp->nq', II * GG)  
+            else:
+                AX = einsum("nkl,nml->nkm", (I, G))
+                AX_ = AX.reshape(n , -1)
+                out = matmul(AX_, AX_.t())
+
+              
+
+            x1 = einsum("nkl,mk->nml", (I, grad_reshape))
+            grad_prod = einsum("nml,nml->n", (x1, G))
+            
+            NGD_kernel = out / n
+            NGD_inv = inv(NGD_kernel + self.damping * eye(n))
+            v = matmul(NGD_inv, grad_prod.unsqueeze(1)).squeeze()
+
+            
+            gv = einsum("n,nml->nml", (v, G))
+            gv = einsum("nml,nkl->mk", (gv, I))
+            gv = gv.view_as(grad)
+            gv = gv / n
+
+            update = (grad - gv)/self.damping
+        
+            module.I = I
+            module.G = G
+            module.NGD_inv = NGD_inv
+            module.AX = AX
+
+
+            return (out, grad_prod, update)
+        elif MODE == 2:
+            # st = time.time()
+
+            A = module.input0
+            n = A.shape[0]
+            p = 1
+            M = g_out[0]
+
+            M = M.reshape( M.shape[1] * M.shape[0], M.shape[2], M.shape[3]).unsqueeze(1)
+            A = A.permute(1 ,0, 2, 3)
+            output = conv2d(A, M, groups = n, padding = (p,p))
+            output = output.permute(1, 0, 2, 3)
+            output = output.reshape(n, -1)
+            K_torch = matmul(output, output.t())
+            # en = time.time()
+            # print('Elapsed Time Conv2d Mode 2:', en - st)
+
+            return K_torch
+
+    
+    def bias(self, ext, module, g_inp, g_out, bpQuantities):
+        n = g_out[0].shape[0]
+        g_out_sc = n * g_out[0]
+
+        # compute vector jacobian product in optimization method
+        grad = module.bias.grad
+        # grad_prod = einsum("nchw,c->n", (g_out_sc, grad))
+
+        # out = einsum("nchw,lchw->nl", g_out_sc, g_out_sc)
+        out = 0
+        grad_prod = 0
+        update = grad
+        return (out, grad_prod, update)
+        
+
+
+

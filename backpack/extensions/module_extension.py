@@ -62,7 +62,6 @@ class ModuleExtension:
     def apply(self, ext, module, g_inp, g_out):
         inp = module.input0
         out = module.output
-
         bpQuantities = self.__backproped_quantities(ext, out)
 
         for param in self.__params:
@@ -70,7 +69,6 @@ class ModuleExtension:
                 extFunc = getattr(self, param)
                 extValue = extFunc(ext, module, g_inp, g_out, bpQuantities)
                 self.__save(extValue, ext, module, param)
-
         bpQuantities = self.backpropagate(ext, module, g_inp, g_out, bpQuantities)
 
         self.__backprop_quantities(ext, inp, out, bpQuantities)
