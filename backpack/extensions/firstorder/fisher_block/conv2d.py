@@ -83,37 +83,41 @@ class FisherBlockConv2d(FisherBlockBase):
             # out_apx =  II * GG 
             # IG = einsum('nqlp->nq', II * GG)
             # out_apx =  IG 
-            AX = []
             if (L*L) * (K + M) < K * M :
                 II = einsum("nkl,qkp->nqlp", (I, I))
                 GG = einsum("nml,qmp->nqlp", (G, G))
-                out = einsum('nqlp->nq', II * GG)  
+                out = einsum('nqlp->nq', II * GG) 
+                x1 = einsum("nkl,mk->nml", (I, grad_reshape))
+                grad_prod = einsum("nml,nml->n", (x1, G)) 
+                NGD_kernel = out / n
+                NGD_inv = inv(NGD_kernel + self.damping * eye(n).to(grad.device))
+                v = matmul(NGD_inv, grad_prod.unsqueeze(1)).squeeze()
+                gv = einsum("n,nml->nml", (v, G))
+                gv = einsum("nml,nkl->mk", (gv, I))
+
+                module.NGD_inv = NGD_inv
+                module.I = I
+                module.G = G
+                
             else:
                 AX = einsum("nkl,nml->nkm", (I, G))
                 AX_ = AX.reshape(n , -1)
-                out = matmul(AX_, AX_.t())
+                out = matmul(AX_, AX_.t())  
+                grad_prod = einsum("nkm,mk->n", (AX, grad_reshape))
+                NGD_kernel = out / n
+                NGD_inv = inv(NGD_kernel + self.damping * eye(n).to(grad.device))
+                v = matmul(NGD_inv, grad_prod.unsqueeze(1)).squeeze()
+                gv = einsum("nkm,n->mk", (AX, v))
+                gv = gv.view_as(grad)
+                gv = gv / n
 
-              
+                module.NGD_inv = NGD_inv
+                module.AX = AX
 
-            x1 = einsum("nkl,mk->nml", (I, grad_reshape))
-            grad_prod = einsum("nml,nml->n", (x1, G))
-            
-            NGD_kernel = out / n
-            NGD_inv = inv(NGD_kernel + self.damping * eye(n).to(grad.device))
-            v = matmul(NGD_inv, grad_prod.unsqueeze(1)).squeeze()
-
-            
-            gv = einsum("n,nml->nml", (v, G))
-            gv = einsum("nml,nkl->mk", (gv, I))
-            gv = gv.view_as(grad)
-            gv = gv / n
 
             update = (grad - gv)/self.damping
-        
-            module.I = I
-            module.G = G
-            module.NGD_inv = NGD_inv
-            module.AX = AX
+
+            
 
 
             return (out, grad_prod, update)
