@@ -94,7 +94,9 @@ class FisherBlockConv2d(FisherBlockBase):
                 v = matmul(NGD_inv, grad_prod.unsqueeze(1)).squeeze()
                 gv = einsum("n,nml->nml", (v, G))
                 gv = einsum("nml,nkl->mk", (gv, I))
-
+                gv = gv.view_as(grad)
+                gv = gv / n
+                
                 module.NGD_inv = NGD_inv
                 module.I = I
                 module.G = G
