@@ -20,7 +20,7 @@ from . import (
 class FisherBlock(BackpropExtension):
     
 
-    def __init__(self, damping=1.0, alpha=0.95, low_rank=False, gamma=0.95):
+    def __init__(self, damping=1.0, alpha=0.95, low_rank='false', gamma=0.95):
         self.gamma = gamma
         self.damping = damping
         self.alpha =alpha

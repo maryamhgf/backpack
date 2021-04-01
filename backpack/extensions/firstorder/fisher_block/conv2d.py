@@ -14,7 +14,7 @@ from torch.linalg import inv
 # import matplotlib.pylab as plt
 MODE = 0
 class FisherBlockConv2d(FisherBlockBase):
-    def __init__(self, damping=1.0, low_rank=False, gamma=0.95):
+    def __init__(self, damping=1.0, low_rank='false', gamma=0.95):
         self.damping = damping
         self.low_rank = low_rank
         self.gamma = gamma
@@ -76,7 +76,7 @@ class FisherBlockConv2d(FisherBlockBase):
                 module.AX = AX
 
                 ### testing low-rank
-                if self.low_rank:
+                if self.low_rank == 'true':
                     U, S, V = svd(AX_, compute_uv=True)
                     cs = cumsum(S, dim = 0)
                     sum_s = sum(S)
