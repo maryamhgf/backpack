@@ -78,7 +78,7 @@ class FisherBlockConv2d(FisherBlockBase):
                 ### testing low-rank
                 if self.low_rank == 'true':
                     # U, S, V = svd(AX_, compute_uv=True)
-                    V, S, U = svd(AX_.T, compute_uv=True)
+                    V, S, U = svd(AX_.T, compute_uv=True, full_matrices=False)
                     cs = cumsum(S, dim = 0)
                     sum_s = sum(S)
                     index = ((cs - self.gamma * sum_s) <= 0).sum()
