@@ -1,6 +1,6 @@
 from backpack.core.derivatives.conv2d import Conv2DDerivatives
 from backpack.extensions.firstorder.fisher_block.fisher_block_base import FisherBlockBase
-from torch import einsum, matmul, sum, numel, sqrt, norm, eye, randint
+from torch import einsum, matmul, sum, numel, sqrt, norm, eye, randint, svd, cumsum, diag
 from torch.nn import Unfold, MaxPool2d, AvgPool2d
 from torch.nn.functional import conv1d, conv2d, conv3d
 from backpack.utils.ein import eingroup
@@ -14,8 +14,10 @@ from torch.linalg import inv
 # import matplotlib.pylab as plt
 MODE = 0
 class FisherBlockConv2d(FisherBlockBase):
-    def __init__(self, damping=1.0):
+    def __init__(self, damping=1.0, low_rank=False, gamma=0.95):
         self.damping = damping
+        self.low_rank = low_rank
+        self.gamma = gamma
         super().__init__(derivatives=Conv2DDerivatives(), params=["bias", "weight"])
 
     def weight(self, ext, module, g_inp, g_out, bpQuantities):
@@ -38,51 +40,7 @@ class FisherBlockConv2d(FisherBlockBase):
             K = I.shape[1]
             L = I.shape[2]
             M = G.shape[1]
-            # print('N K L M', N, K, L , M)
-            # extra optimization for some networks such as VGG16
-            # if (L*L) * (K + M) < K * M :
-            #     II = einsum("nkl,qkp->nqlp", (input, input))
-            #     GG = einsum("nml,qmp->nqlp", (grad_output_viewed, grad_output_viewed))
-            #     out = einsum('nqlp->nq', II * GG)                
-            #     x1 = einsum("nkl,mk->nml", (input, grad_reshape))
-            #     grad_prod = einsum("nml,nml->n", (x1, grad_output_viewed))
-            # else:
-            #     AX = einsum("nkl,nml->nkm", (input, grad_output_viewed))
-            #     # compute vector jacobian product in optimization method
-            #     grad_prod = einsum("nkm,mk->n", (AX, grad_reshape))
-
-            #     AX = AX.reshape(n , -1)
-            #     out = matmul(AX, AX.t())
-
-            ## approximation:
-            # extra optimization for some networks such as VGG16
             
-            # l = input.shape[2]
-            # prob = 0.01
-            # l_new = int(np.floor(prob * l))
-            # # print(l_new)
-            # # l_new = 10
-            # input_s =  input[:, :, randint(l, (l_new,))] 
-            # grad_s = grad_output_viewed[:, :, randint(l, (l_new,))]
-
-            # II = einsum("nkl,qkp->nq", (input, input))
-            # m = MaxPool2d(10, stride=3)
-            # m = AvgPool2d(20, stride=1)
-            # input_f = module.input0
-            # output_i = m(input_f)
-            # input_s = unfold_func(module)(output_i)
-            # output_g = m(g_out_sc)
-            # grad_s = output_g.reshape(output_g.shape[0], output_g.shape[1], -1)
-
-
-
-
-            # II = einsum("nkl,qkp->nqlp", (input_s, input_s))
-            # GG = einsum("nml,qmp->nq", (grad_output_viewed, grad_output_viewed))
-            # GG = einsum("nml,qmp->nqlp", (grad_s, grad_s))
-            # out_apx =  II * GG 
-            # IG = einsum('nqlp->nq', II * GG)
-            # out_apx =  IG 
             if (L*L) * (K + M) < K * M :
                 II = einsum("nkl,qkp->nqlp", (I, I))
                 GG = einsum("nml,qmp->nqlp", (G, G))
@@ -96,7 +54,7 @@ class FisherBlockConv2d(FisherBlockBase):
                 gv = einsum("nml,nkl->mk", (gv, I))
                 gv = gv.view_as(grad)
                 gv = gv / n
-                
+
                 module.NGD_inv = NGD_inv
                 module.I = I
                 module.G = G
@@ -106,6 +64,7 @@ class FisherBlockConv2d(FisherBlockBase):
                 AX_ = AX.reshape(n , -1)
                 out = matmul(AX_, AX_.t())  
                 grad_prod = einsum("nkm,mk->n", (AX, grad_reshape))
+
                 NGD_kernel = out / n
                 NGD_inv = inv(NGD_kernel + self.damping * eye(n).to(grad.device))
                 v = matmul(NGD_inv, grad_prod.unsqueeze(1)).squeeze()
@@ -116,12 +75,21 @@ class FisherBlockConv2d(FisherBlockBase):
                 module.NGD_inv = NGD_inv
                 module.AX = AX
 
-
+                ### testing low-rank
+                if self.low_rank:
+                    U, S, V = svd(AX_, compute_uv=True)
+                    cs = cumsum(S, dim = 0)
+                    sum_s = sum(S)
+                    index = ((cs - self.gamma * sum_s) <= 0).sum()
+                    # print('index:', index)
+                    U = U[:, 0:index]
+                    S = S[0:index]
+                    V = V[:, 0:index]
+                    module.U = U
+                    module.S = S
+                    module.V = V
+                
             update = (grad - gv)/self.damping
-
-            
-
-
             return (out, grad_prod, update)
         elif MODE == 2:
             # st = time.time()
