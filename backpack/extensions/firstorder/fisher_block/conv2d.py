@@ -1,12 +1,12 @@
 from backpack.core.derivatives.conv2d import Conv2DDerivatives
 from backpack.extensions.firstorder.fisher_block.fisher_block_base import FisherBlockBase
-from torch import einsum, matmul, sum, numel, sqrt, norm, eye, randint, svd, cumsum, diag
+from torch import einsum, matmul, sum, numel, sqrt, norm, eye, randint, cumsum, diag
 from torch.nn import Unfold, MaxPool2d, AvgPool2d
 from torch.nn.functional import conv1d, conv2d, conv3d
 from backpack.utils.ein import eingroup
 from backpack.utils.conv import unfold_func
 
-from torch.linalg import inv
+from torch.linalg import inv, svd
 
 
 # import numpy as np
