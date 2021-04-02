@@ -29,7 +29,9 @@ class FisherBlockBatchNorm1d(FisherBlockBase):
         NGD_inv = inv(NGD_kernel + self.damping * eye(n).to(grad.device))
         v = matmul(NGD_inv, grad_prod.unsqueeze(1)).squeeze()
 
-        gv = einsum("n,nk->k", (v, G))
+        # gv = einsum("n,nk->k", (v, G))
+        ### multiply with Jacobian
+        gv = einsum("n,nk->k", (v, dw))
         gv = gv / n
 
         update = (grad - gv)/self.damping
