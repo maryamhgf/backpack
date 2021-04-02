@@ -36,8 +36,7 @@ class FisherBlockBatchNorm1d(FisherBlockBase):
 
         update = (grad - gv)/self.damping
 
-        module.I = I
-        module.G = G
+        module.dw = dw
         module.NGD_inv = NGD_inv
 
         return (out, grad_prod, update)
