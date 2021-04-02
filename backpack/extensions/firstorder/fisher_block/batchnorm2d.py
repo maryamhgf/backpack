@@ -24,7 +24,6 @@ class FisherBlockBatchNorm2d(FisherBlockBase):
         # compute vector jacobian product in optimization method
         grad = module.weight.grad
         dw_reduced = einsum("nihw->ni", dw)
-        # grad_prod = einsum("nihw,i->n", (dw, grad))
         grad_prod = einsum("ni,i->n", (dw_reduced, grad))
 
         NGD_kernel = out / n
