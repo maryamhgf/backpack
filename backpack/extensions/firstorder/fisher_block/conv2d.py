@@ -19,7 +19,6 @@ class FisherBlockConv2d(FisherBlockBase):
         self.low_rank = low_rank
         self.gamma = gamma
         self.memory_efficient = memory_efficient
-        print(self.memory_efficient)
         super().__init__(derivatives=Conv2DDerivatives(), params=["bias", "weight"])
 
     def weight(self, ext, module, g_inp, g_out, bpQuantities):
