@@ -83,12 +83,14 @@ class FisherBlockEffConv2d(FisherBlockEffBase):
                     module.S = S
                     module.V = V
                 del AX_
+
                 grad_prod = einsum("nkm,mk->n", (AX, grad_reshape))
 
                 NGD_inv = inv(NGD_kernel + self.damping * eye(n).to(grad.device))
                 module.NGD_inv = NGD_inv 
                 v = matmul(NGD_inv, grad_prod.unsqueeze(1)).squeeze()
                 del NGD_inv
+                torch.cuda.empty_cache()
                 gv = einsum("nkm,n->mk", (AX, v)).view_as(grad) /n
                 module.AX = AX
 
