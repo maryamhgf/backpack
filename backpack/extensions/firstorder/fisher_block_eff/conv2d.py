@@ -32,6 +32,7 @@ class FisherBlockEffConv2d(FisherBlockEffBase):
             g_out_sc = n * g_out[0]
             
             print('======= CONV2D ======')
+            print('MODULE NAME:', module)
             reporter = MemReporter()
             reporter.report()
 
