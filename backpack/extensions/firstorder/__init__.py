@@ -25,5 +25,6 @@ from .sum_grad_squared import SumGradSquared
 from .variance import Variance
 from .fisher import Fisher
 from .fisher_block import FisherBlock
+from .fisher_block_eff import FisherBlockEff
 
-__all__ = ["BatchL2Grad", "BatchGrad", "SumGradSquared", "Variance", "Fisher", "FisherBlock"]
+__all__ = ["BatchL2Grad", "BatchGrad", "SumGradSquared", "Variance", "Fisher", "FisherBlock", "FisherBlockEff"]
