@@ -65,19 +65,7 @@ class FisherBlockEffConv2d(FisherBlockEffBase):
             else:
                 AX = einsum("nkl,nml->nkm", (I, G))
                 AX_ = AX.reshape(n , -1)
-                out = matmul(AX_, AX_.t())  
-                grad_prod = einsum("nkm,mk->n", (AX, grad_reshape))
-
-                NGD_kernel = out / n
-                NGD_inv = inv(NGD_kernel + self.damping * eye(n).to(grad.device))
-                v = matmul(NGD_inv, grad_prod.unsqueeze(1)).squeeze()
-                gv = einsum("nkm,n->mk", (AX, v))
-                gv = gv.view_as(grad)
-                gv = gv / n
-
-                module.NGD_inv = NGD_inv
-                module.AX = AX
-
+                NGD_kernel = matmul(AX_, AX_.t()) / n 
                 ### testing low-rank
                 if self.low_rank == 'true':
                     V, S, U = svd(AX_.T, compute_uv=True, full_matrices=False)
@@ -94,6 +82,17 @@ class FisherBlockEffConv2d(FisherBlockEffBase):
                     module.U = U
                     module.S = S
                     module.V = V
+                del AX_
+                grad_prod = einsum("nkm,mk->n", (AX, grad_reshape))
+
+                NGD_inv = inv(NGD_kernel + self.damping * eye(n).to(grad.device))
+                module.NGD_inv = NGD_inv 
+                v = matmul(NGD_inv, grad_prod.unsqueeze(1)).squeeze()
+                del NGD_inv
+                gv = einsum("nkm,n->mk", (AX, v)).view_as(grad) /n
+                module.AX = AX
+
+                
                 
             update = (grad - gv)/self.damping
             return update
