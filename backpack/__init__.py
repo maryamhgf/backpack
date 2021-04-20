@@ -134,7 +134,8 @@ def hook_run_extensions(module, g_inp, g_out):
     for backpack_extension in CTX.get_active_exts():
         if CTX.get_debug():
             print("[DEBUG] Running extension", backpack_extension, "on", module)
-        backpack_extension.apply(module, g_inp, g_out)
+        if isinstance(module, nn.Conv2d) or isinstance(module, nn.Linear):
+            backpack_extension.apply(module, g_inp, g_out)
 
     if not (
         CTX.is_extension_active(
