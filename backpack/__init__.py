@@ -83,7 +83,7 @@ def hook_store_io(module, input, output):
         input: List of input tensors
         output: output tensor
     """
-    if isinstance(module, nn.Conv2d) or isinstance(module, nn.Linear):
+    if module.training and (isinstance(module, nn.Conv2d) or isinstance(module, nn.Linear)):
         for i in range(len(input)):
             setattr(module, "input{}".format(i), input[i])
         module.output = output
