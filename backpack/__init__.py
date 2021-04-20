@@ -8,7 +8,7 @@ from backpack.extensions.backprop_extension import BackpropExtension
 from . import extensions
 from .context import CTX
 
-
+import torch.nn as nn
 class backpack:
     """Activates Backpack Extensions.
 
@@ -83,9 +83,10 @@ def hook_store_io(module, input, output):
         input: List of input tensors
         output: output tensor
     """
-    for i in range(len(input)):
-        setattr(module, "input{}".format(i), input[i])
-    module.output = output
+    if isinstance(module, nn.Conv2d) or isinstance(module, nn.Linear):
+        for i in range(len(input)):
+            setattr(module, "input{}".format(i), input[i])
+        module.output = output
 
 def hook_param(grad):
     """
