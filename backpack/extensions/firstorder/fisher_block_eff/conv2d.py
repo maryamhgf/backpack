@@ -7,7 +7,6 @@ from backpack.utils.ein import eingroup
 from backpack.utils.conv import unfold_func
 from torch.cuda import empty_cache
 from torch.linalg import inv, svd
-# from pytorch_memlab import MemReporter
 
 
 # import numpy as np
@@ -30,12 +29,6 @@ class FisherBlockEffConv2d(FisherBlockEffBase):
             grad_reshape = grad.reshape(grad.shape[0], -1)
             n = g_out[0].shape[0]
             g_out_sc = n * g_out[0]
-            
-            # print('======= CONV2D ======')
-            # print('MODULE NAME:', module)
-            # reporter = MemReporter()
-            # reporter.report()
-
 
             I = unfold_func(module)(module.input0)
             grad_output_viewed = g_out_sc.reshape(g_out_sc.shape[0], g_out_sc.shape[1], -1)
