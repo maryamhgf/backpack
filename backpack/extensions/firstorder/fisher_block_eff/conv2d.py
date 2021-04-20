@@ -5,7 +5,7 @@ from torch.nn import Unfold, MaxPool2d, AvgPool2d
 from torch.nn.functional import conv1d, conv2d, conv3d
 from backpack.utils.ein import eingroup
 from backpack.utils.conv import unfold_func
-
+from torch.cuda import empty_cache
 from torch.linalg import inv, svd
 
 
@@ -90,7 +90,7 @@ class FisherBlockEffConv2d(FisherBlockEffBase):
                 module.NGD_inv = NGD_inv 
                 v = matmul(NGD_inv, grad_prod.unsqueeze(1)).squeeze()
                 del NGD_inv
-                torch.cuda.empty_cache()
+                empty_cache()
                 gv = einsum("nkm,n->mk", (AX, v)).view_as(grad) /n
                 module.AX = AX
 
