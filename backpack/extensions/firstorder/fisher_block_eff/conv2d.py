@@ -36,8 +36,7 @@ class FisherBlockEffConv2d(FisherBlockEffBase):
             reporter.report()
 
 
-            input = unfold_func(module)(module.input0)
-            I = input
+            I = unfold_func(module)(module.input0)
             grad_output_viewed = g_out_sc.reshape(g_out_sc.shape[0], g_out_sc.shape[1], -1)
             G = grad_output_viewed
 
@@ -66,9 +65,16 @@ class FisherBlockEffConv2d(FisherBlockEffBase):
                 else:
                     module.I = I
                 module.G = G
+                del I
+                del G
+                del II
+                del GG
+                empty_cache()
                 
             else:
                 AX = einsum("nkl,nml->nkm", (I, G))
+                del I
+                del G
                 AX_ = AX.reshape(n , -1)
                 NGD_kernel = matmul(AX_, AX_.t()) / n 
                 ### testing low-rank
