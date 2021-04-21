@@ -14,11 +14,12 @@ from torch.linalg import inv, svd
 # import matplotlib.pylab as plt
 MODE = 0
 class FisherBlockEffConv2d(FisherBlockEffBase):
-    def __init__(self, damping=1.0, low_rank='false', gamma=0.95, memory_efficient='false'):
+    def __init__(self, damping=1.0, low_rank='false', gamma=0.95, memory_efficient='false', super_opt='false'):
         self.damping = damping
         self.low_rank = low_rank
         self.gamma = gamma
         self.memory_efficient = memory_efficient
+        self.super_opt = super_opt
         super().__init__(derivatives=Conv2DDerivatives(), params=["bias", "weight"])
 
     def weight(self, ext, module, g_inp, g_out, bpQuantities):
@@ -39,7 +40,13 @@ class FisherBlockEffConv2d(FisherBlockEffBase):
             L = I.shape[2]
             M = G.shape[1]
             # print(N,K,L,M)
-            if (L*L) * (K + M) < K * M :
+            flag = False
+            if self.super_opt == 'true':
+                flag = N * (L * L) * (K + M) < K * M * L + N * K * M
+            else:
+                flag = (L * L) * (K + M) < K * M
+
+            if flag == True :
                 II = einsum("nkl,qkp->nqlp", (I, I))
                 GG = einsum("nml,qmp->nqlp", (G, G))
                 out = einsum('nqlp->nq', II * GG) 
