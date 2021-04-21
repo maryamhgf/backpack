@@ -47,7 +47,6 @@ class FisherBlockEffConv2d(FisherBlockEffBase):
                 flag = (L * L) * (K + M) < K * M
 
             if flag == True :
-                print('Optimization Enabled')
                 II = einsum("nkl,qkp->nqlp", (I, I))
                 GG = einsum("nml,qmp->nqlp", (G, G))
                 out = einsum('nqlp->nq', II * GG) 
