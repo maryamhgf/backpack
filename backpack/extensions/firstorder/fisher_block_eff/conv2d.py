@@ -68,6 +68,8 @@ class FisherBlockEffConv2d(FisherBlockEffBase):
                 empty_cache()
                 
             else:
+                print('normal computation for:', module)
+                print(N,K,L,M)
                 AX = einsum("nkl,nml->nkm", (I, G))
                 del I
                 del G
