@@ -40,6 +40,8 @@ class FisherBlockEffConv2d(FisherBlockEffBase):
             M = G.shape[1]
             # print(N,K,L,M)
             if (L*L) * (K + M) < K * M :
+                print('module:', module)
+                print(N,M,K,L)
                 II = einsum("nkl,qkp->nqlp", (I, I))
                 GG = einsum("nml,qmp->nqlp", (G, G))
                 out = einsum('nqlp->nq', II * GG) 
