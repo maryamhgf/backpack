@@ -40,8 +40,6 @@ class FisherBlockEffConv2d(FisherBlockEffBase):
             M = G.shape[1]
             # print(N,K,L,M)
             if (L*L) * (K + M) < K * M :
-                print('module:', module)
-                print(N,M,K,L)
                 II = einsum("nkl,qkp->nqlp", (I, I))
                 GG = einsum("nml,qmp->nqlp", (G, G))
                 out = einsum('nqlp->nq', II * GG) 
@@ -68,8 +66,6 @@ class FisherBlockEffConv2d(FisherBlockEffBase):
                 empty_cache()
                 
             else:
-                print('normal computation for:', module)
-                print(N,K,L,M)
                 AX = einsum("nkl,nml->nkm", (I, G))
                 del I
                 del G

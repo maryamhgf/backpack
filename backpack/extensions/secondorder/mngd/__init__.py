@@ -31,7 +31,7 @@ class MNGD(BackpropExtension):
             fail_mode="ERROR",
             module_exts={
                 # MSELoss: losses.DiagGGNMSELoss(),
-                CrossEntropyLoss: losses.MNGDCrossEntropyLoss(),
+                CrossEntropyLoss: losses.MNGDLoss(),
                 Linear: linear.MNGDLinear(),
                 MaxPool2d: pooling.MNGDMaxPool2d(),
                 AvgPool2d: pooling.MNGDAvgPool2d(),
