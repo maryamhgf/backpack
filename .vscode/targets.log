@@ -1,0 +1,505 @@
+make all --print-data-base --no-builtin-variables --no-builtin-rules --question
+make: *** No rule to make target 'all'.  Stop.
+ 
+# GNU Make 4.1
+# Built for x86_64-pc-linux-gnu
+# Copyright (C) 1988-2014 Free Software Foundation, Inc.
+# License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+# This is free software: you are free to change and redistribute it.
+# There is NO WARRANTY, to the extent permitted by law.
+
+# Make data base, printed on Fri Jun 18 19:11:32 2021
+
+# Variables
+
+# 'override' directive
+GNUMAKEFLAGS := 
+# automatic
+<D = $(patsubst %/,%,$(dir $<))
+# automatic
+?F = $(notdir $?)
+# environment
+PAPERSIZE = letter
+# environment
+DESKTOP_SESSION = ubuntu
+# default
+.SHELLFLAGS := -c
+# environment
+XDG_SESSION_TYPE = x11
+# environment
+VSCODE_LOG_NATIVE = false
+# automatic
+?D = $(patsubst %/,%,$(dir $?))
+# environment
+IM_CONFIG_PHASE = 2
+# automatic
+@D = $(patsubst %/,%,$(dir $@))
+# environment
+XAUTHORITY = /run/user/1000/gdm/Xauthority
+# environment
+GDMSESSION = ubuntu
+# environment
+XMODIFIERS = @im=ibus
+# makefile
+CURDIR := /home/maryam/Documents/Paper/LayerNorm/backpack
+# makefile
+SHELL = /bin/sh
+# environment
+VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
+# environment
+_ = /usr/share/code/code
+# environment
+XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
+# makefile (from 'makefile', line 1)
+MAKEFILE_LIST :=  makefile
+# automatic
+@F = $(notdir $@)
+# environment
+GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
+# environment
+USERNAME = maryam
+# environment
+MAKELEVEL := 0
+# environment
+MANDATORY_PATH = /usr/share/gconf/ubuntu.mandatory.path
+# environment
+XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
+# environment
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus
+# environment
+VSCODE_VERBOSE_LOGGING = true
+# environment
+CLUTTER_IM_MODULE = xim
+# environment
+LESSOPEN = | /usr/bin/lesspipe %s
+# environment
+LC_NAME = en_US.UTF-8
+# environment
+VSCODE_CWD = /home/maryam
+# default
+MAKE_HOST := x86_64-pc-linux-gnu
+# environment
+PATH = /home/maryam/.local/bin:/home/maryam/anaconda3/bin:/home/maryam/anaconda3/condabin:/home/maryam/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+# environment
+GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
+# environment
+GJS_DEBUG_OUTPUT = stderr
+# environment
+SESSION_MANAGER = local/maryam:@/tmp/.ICE-unix/1732,unix/maryam:/tmp/.ICE-unix/1732
+# environment
+XDG_RUNTIME_DIR = /run/user/1000
+# environment
+TEXTDOMAIN = im-config
+# environment
+CONDA_PREFIX = /home/maryam/anaconda3
+# environment
+XDG_MENU_PREFIX = gnome-
+# environment
+VSCODE_LOG_STACK = false
+# environment
+VSCODE_CRASH_REPORTER_START_OPTIONS = {"companyName":"Microsoft","productName":"VSCode","submitURL":"appcenter://code?aid=fba07a4d-84bd-4fc8-a125-9640fc8ce171&uid=7050cf9d-0352-4d8c-b194-c1ae84701740&iid=7050cf9d-0352-4d8c-b194-c1ae84701740&sid=7050cf9d-0352-4d8c-b194-c1ae84701740","uploadToServer":true}
+# default
+.FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
+# environment
+LS_COLORS = 
+# environment
+XDG_SESSION_DESKTOP = ubuntu
+# environment
+SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
+# environment
+GIO_LAUNCHED_DESKTOP_FILE_PID = 3216
+# automatic
+%F = $(notdir $%)
+# environment
+DISPLAY = :0
+# environment
+CONDA_EXE = /home/maryam/anaconda3/bin/conda
+# environment
+GTK_IM_MODULE = ibus
+# environment
+VSCODE_PIPE_LOGGING = true
+# environment
+PWD = /home/maryam/Documents/Paper/LayerNorm/backpack
+# environment
+XDG_SEAT = seat0
+# environment
+SSH_AGENT_PID = 1810
+# environment
+ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
+# environment
+GTK_MODULES = gail:atk-bridge
+# environment
+VSCODE_AMD_ENTRYPOINT = vs/workbench/services/extensions/node/extensionHostProcess
+# environment
+HOME = /home/maryam
+# environment
+LESSCLOSE = /usr/bin/lesspipe %s %s
+# environment
+LOGNAME = maryam
+# environment
+APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = true
+# environment
+CONDA_PROMPT_MODIFIER = (base) 
+# automatic
++F = $(notdir $+)
+# environment
+VSCODE_HANDLES_UNCAUGHT_ERRORS = true
+# default
+MAKE_VERSION := 4.1
+# environment
+GNOME_DESKTOP_SESSION_ID = this-is-deprecated
+# automatic
+^D = $(patsubst %/,%,$(dir $^))
+# environment
+XDG_VTNR = 2
+# environment
+LC_TIME = en_US.UTF-8
+# environment
+CONDA_DEFAULT_ENV = base
+# default
+MAKE = $(MAKE_COMMAND)
+# default
+MAKECMDGOALS := all
+# environment
+QT_IM_MODULE = ibus
+# environment
+SHLVL = 1
+# environment
+GNOME_SHELL_SESSION_MODE = ubuntu
+# environment
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-ca4f54e1-63fa-4510-bb95-ef705c6e4657.sock
+# environment
+XDG_SESSION_ID = 2
+# environment
+USER = maryam
+# environment
+LC_MONETARY = en_US.UTF-8
+# makefile
+.DEFAULT_GOAL := help
+# environment
+XDG_CURRENT_DESKTOP = Unity
+# automatic
+%D = $(patsubst %/,%,$(dir $%))
+# environment
+LC_TELEPHONE = en_US.UTF-8
+# environment
+CONDA_SHLVL = 1
+# default
+MAKE_COMMAND := make
+# environment
+VSCODE_NODE_CACHED_DATA_DIR = /home/maryam/.config/Code/CachedData/054a9295330880ed74ceaedda236253b4f39a335
+# default
+.VARIABLES := 
+# automatic
+*F = $(notdir $*)
+# environment
+VSCODE_IPC_HOOK = /run/user/1000/vscode-fe5a514d-1.56.2-main.sock
+# makefile
+MAKEFLAGS = pqrR
+# environment
+MFLAGS = -pqrR
+# automatic
+*D = $(patsubst %/,%,$(dir $*))
+# environment
+BREAKPAD_DUMP_LOCATION = /home/maryam/.config/Code/exthost Crash Reports
+# automatic
++D = $(patsubst %/,%,$(dir $+))
+# environment
+GDK_BACKEND = x11
+# environment
+LC_PAPER = en_US.UTF-8
+# environment
+QT_ACCESSIBILITY = 1
+# environment
+DEFAULTS_PATH = /usr/share/gconf/ubuntu.default.path
+# environment
+TEXTDOMAINDIR = /usr/share/locale/
+# default
+MAKEFILES := 
+# environment
+LC_NUMERIC = en_US.UTF-8
+# automatic
+<F = $(notdir $<)
+# environment
+ELECTRON_RUN_AS_NODE = 1
+# environment
+LC_MEASUREMENT = en_US.UTF-8
+# environment
+LC_ALL = C
+# environment
+CONDA_PYTHON_EXE = /home/maryam/anaconda3/bin/python
+# environment
+QT4_IM_MODULE = xim
+# environment
+GJS_DEBUG_TOPICS = JS ERROR;JS LOG
+# automatic
+^F = $(notdir $^)
+# default
+SUFFIXES := 
+# environment
+_CE_M = 
+# environment
+CHROME_DESKTOP = code-url-handler.desktop
+# environment
+WINDOWPATH = 2
+# default
+.INCLUDE_DIRS = /usr/include /usr/local/include /usr/include
+# environment
+LC_IDENTIFICATION = en_US.UTF-8
+# default
+.RECIPEPREFIX := 
+# environment
+LC_ADDRESS = en_US.UTF-8
+# environment
+LANG = C
+# environment
+VSCODE_PID = 3216
+# environment
+_CE_CONDA = 
+# variable set hash-table stats:
+# Load=122/1024=12%, Rehash=0, Collisions=22/147=15%
+
+# Pattern-specific Variable Values
+
+# No pattern-specific variable values.
+
+# Directories
+
+# . (device 66309, inode 150956): 34 files, no impossibilities.
+
+# 34 files, no impossibilities in 1 directories.
+
+# Implicit Rules
+
+# No implicit rules.
+
+# Files
+
+black:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'makefile', line 54):
+	@black . --config=black.toml
+
+# Not a target:
+all:
+ 
+#  Command line target.
+#  Implicit rule search has been done.
+#  File does not exist.
+#  File has not been updated.
+
+.PHONY: help black black-check flake8 install install-dev install-devtools install-test install-lint install-docs test conda-env black isort format black-check isort-check format-check flake8 pydocstyle-check darglint-check build-docs
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+install-dev: install-devtools
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'makefile', line 103):
+	@echo "Install dependencies..."
+	@pip install -r requirements.txt
+	@echo "Uninstall existing version of backpack..."
+	@pip uninstall backpack-for-pytorch
+	@echo "Install backpack in editable mode..."
+	@pip install -e .
+	@echo "Install pre-commit hooks..."
+	@pre-commit install
+
+isort:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'makefile', line 69):
+	@isort --apply
+
+black-check:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'makefile', line 57):
+	@black . --config=black.toml --check
+
+format:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'makefile', line 75):
+	@make black
+	@make isort
+	@make black-check
+
+isort-check:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'makefile', line 72):
+	@isort --check
+
+conda-env:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'makefile', line 115):
+	@conda env create --file .conda_env.yml
+
+test:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'makefile', line 44):
+	@pytest -vx --cov=backpack .
+
+install-docs:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'makefile', line 96):
+	@pip install -r requirements/docs.txt
+
+# Not a target:
+makefile:
+#  Implicit rule search has been done.
+#  Last modified 2021-06-18 18:48:37.184565745
+#  File has been updated.
+#  Successfully updated.
+
+format-check: black-check isort-check pydocstyle-check darglint-check
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+
+help:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'makefile', line 15):
+	@echo "test"
+	@echo "        Run pytest on the project and report coverage"
+	@echo "black"
+	@echo "        Run black on the project"
+	@echo "black-check"
+	@echo "        Check if black would change files"
+	@echo "flake8"
+	@echo "        Run flake8 on the project"
+	@echo "pydocstyle-check"
+	@echo "        Run pydocstyle on the project"
+	@echo "darglint-check"
+	@echo "        Run darglint on the project"
+	@echo "install"
+	@echo "        Install backpack and dependencies"
+	@echo "install-dev"
+	@echo "        Install all development tools"
+	@echo "install-lint"
+	@echo "        Install only the linter tools (included in install-dev)"
+	@echo "install-test"
+	@echo "        Install only the testing tools (included in install-dev)"
+	@echo "install-docs"
+	@echo "        Install only the tools to build/view the docs (included in install-dev)"
+	@echo "conda-env"
+	@echo "        Create conda environment 'backpack' with dev setup"
+	@echo "build-docs"
+	@echo "        Build the docs"
+
+.DEFAULT: help
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+build-docs:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'makefile', line 120):
+	@cd docs_src/rtd && make html
+
+install-lint:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'makefile', line 90):
+	@pip install -r requirements/lint.txt
+
+darglint-check:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'makefile', line 66):
+	@darglint --verbosity 2 .
+
+install-devtools:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'makefile', line 99):
+	@echo "Install dev tools..."
+	@pip install -r requirements-dev.txt
+
+flake8:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'makefile', line 60):
+	@flake8 .
+
+install-test:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'makefile', line 93):
+	@pip install -r requirements/test.txt
+
+pydocstyle-check:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'makefile', line 63):
+	@pydocstyle --count .
+
+install:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'makefile', line 86):
+	@pip install -r requirements.txt
+	@pip install .
+
+# files hash-table stats:
+# Load=24/1024=2%, Rehash=0, Collisions=0/92=0%
+# VPATH Search Paths
+
+# No 'vpath' search paths.
+
+# No general ('VPATH' variable) search path.
+
+# strcache buffers: 1 (0) / strings = 58 / storage = 638 B / avg = 11 B
+# current buf: size = 8162 B / used = 638 B / count = 58 / avg = 11 B
+
+# strcache performance: lookups = 133 / hit rate = 56%
+# hash-table stats:
+# Load=58/8192=1%, Rehash=0, Collisions=1/133=1%
+# Finished Make data base on Fri Jun 18 19:11:32 2021
+
+ 

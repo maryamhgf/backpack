@@ -1,0 +1,1 @@
+{"buildTargets":["black","black-check","build-docs","conda-env","darglint-check","flake8","format","format-check","help","install","install-dev","install-devtools","install-docs","install-lint","install-test","isort","isort-check","pydocstyle-check","test"],"launchTargets":[],"customConfigurationProvider":{"workspaceBrowse":{"browsePath":[],"compilerArgs":[]},"fileIndex":[]}}
